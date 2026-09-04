@@ -1,8 +1,13 @@
-const CACHE_NAME = "prompt-injection-hacker-v1.0.0";
+const CACHE_NAME = "prompt-injection-hacker-v1.3.0-node";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
+  "./js/difficulty.js",
+  "./js/hint-system.js",
+  "./js/defense-analyzer.js",
+  "./js/companion.js",
+  "./js/epilogue.js",
   "./js/app.js",
   "./manifest.webmanifest",
   "./assets/favicon.svg",

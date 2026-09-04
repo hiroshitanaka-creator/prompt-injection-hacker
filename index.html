@@ -2,16 +2,26 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="theme-color" content="#050d11">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="言語の隙を突き、守られたAIからシークレットワードを引き出すブラウザゲーム。">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PI Hacker">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="description" content="NODEと防御を観測しながら、守られたAIからシークレットワードを引き出すブラウザゲーム。">
   <meta name="robots" content="index,follow">
   <title>PROMPT INJECTION HACKER</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./assets/icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="./assets/icon-192.png">
   <link rel="stylesheet" href="./styles.css">
+  <script defer src="./js/difficulty.js"></script>
+  <script defer src="./js/hint-system.js"></script>
+  <script defer src="./js/defense-analyzer.js"></script>
+  <script defer src="./js/companion.js"></script>
+  <script defer src="./js/epilogue.js"></script>
   <script defer src="./js/app.js"></script>
 </head>
 <body>
@@ -19,7 +29,7 @@
   <div class="ambient scanlines" aria-hidden="true"></div>
   <div class="ambient edge-vignette" aria-hidden="true"></div>
 
-  <div class="app-shell" id="appShell">
+  <div class="app-shell" id="appShell" data-mobile-view="console">
     <header class="topbar">
       <a class="brand" href="./" aria-label="Prompt Injection Hacker ホーム">
         <span class="brand-mark" aria-hidden="true"><span>&gt;_</span></span>
@@ -49,7 +59,22 @@
       </div>
     </header>
 
-    <main class="game-grid">
+    <section class="mobile-hud" aria-label="現在の侵入状況">
+      <button class="mobile-hud-stage" type="button" data-mobile-tab="mission" aria-label="任務情報を開く">
+        <span>LV.<b id="mobileStageNumber">1</b></span>
+        <strong id="mobileStageTitle">素直な守衛</strong>
+      </button>
+      <button class="mobile-hud-stat" type="button" data-mobile-tab="intel" aria-label="解析画面を開く">
+        <span>ALERT</span>
+        <strong id="mobileAlertValue">0/10</strong>
+      </button>
+      <button class="mobile-hud-stat" type="button" data-mobile-tab="campaign" aria-label="進行画面を開く">
+        <span>SCORE</span>
+        <strong id="mobileScore">1,200</strong>
+      </button>
+    </section>
+
+    <main class="game-grid" id="gameGrid">
       <aside class="briefing-rail" aria-label="ミッション情報">
         <section class="panel target-panel">
           <div class="panel-heading">
@@ -89,17 +114,58 @@
           </div>
         </section>
 
+        <section class="panel difficulty-panel">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6m6 12V9m6 9V3m4 15H2"/></svg>
+            <h2>DIFFICULTY</h2>
+          </div>
+          <div class="difficulty-options" id="difficultyOptions" role="radiogroup" aria-label="難易度選択">
+            <button type="button" data-difficulty="assist" role="radio" aria-checked="false"><b>ASSIST</b><span>解析多め</span></button>
+            <button type="button" data-difficulty="normal" role="radio" aria-checked="true"><b>NORMAL</b><span>標準</span></button>
+            <button type="button" data-difficulty="blackbox" role="radio" aria-checked="false"><b>BLACKBOX</b><span>生ログ中心</span></button>
+          </div>
+          <p class="difficulty-description" id="difficultyDescription">標準設定。観測を重ねるほど解析と上位ヒントが解放されます。</p>
+        </section>
+
         <section class="panel tactics-panel">
           <div class="panel-heading">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M8.5 14.5A6 6 0 1 1 15.8 14c-.9.8-1.3 1.5-1.5 2.5h-4.6c-.2-.9-.5-1.4-1.2-2Z"/></svg>
             <h2>FIELD NOTES</h2>
           </div>
           <ul id="stageTips"></ul>
-          <button class="secondary-button hint-button" id="hintButton" type="button">
-            <span>解析ヒントを開く</span>
-            <b id="hintCost">−75 pts</b>
-          </button>
-          <p class="hint-text" id="revealedHint" hidden></p>
+          <div class="hint-tier-grid" id="hintTierGrid" aria-label="3段階ヒント">
+            <button class="secondary-button hint-tier-button" type="button" data-hint-tier="1">
+              <span><b>H1</b><small>考え方</small></span><em>−40</em>
+            </button>
+            <button class="secondary-button hint-tier-button" type="button" data-hint-tier="2">
+              <span><b>H2</b><small>攻撃カテゴリ</small></span><em>−90</em>
+            </button>
+            <button class="secondary-button hint-tier-button" type="button" data-hint-tier="3">
+              <span><b>H3</b><small>具体的方向</small></span><em>−160</em>
+            </button>
+          </div>
+          <div class="hint-feed" id="hintFeed" aria-live="polite"><p class="hint-empty">まだヒントは使用していません。</p></div>
+        </section>
+
+        <section class="panel mobile-tools-panel" aria-label="iPhone用メニュー">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21h-4v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+            <h2>iPhone MENU</h2>
+          </div>
+          <div class="mobile-tool-actions">
+            <button class="mobile-tool-button" id="mobileHelpButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 3.3 2.2c-.8.4-1.1.9-1.1 1.8m0 3h.01"/></svg>
+              <span><b>遊び方</b><small>ルールと攻略の基本</small></span><em>›</em>
+            </button>
+            <button class="mobile-tool-button" id="mobileInstallButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+              <span><b>ホーム画面に追加</b><small>全画面PWAで遊ぶ手順</small></span><em>›</em>
+            </button>
+            <button class="mobile-tool-button danger" id="mobileResetButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2.3 5.7M4 11V5m0 6h6"/></svg>
+              <span><b>進行状況を初期化</b><small>ベストスコアを含めて削除</small></span><em>›</em>
+            </button>
+          </div>
         </section>
       </aside>
 
@@ -130,13 +196,17 @@
 
           <div class="prompt-editor" id="promptEditor">
             <div class="prompt-highlight" id="promptHighlight" aria-hidden="true"></div>
-            <textarea id="promptInput" rows="5" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="ターゲットAIへ送るプロンプト" placeholder="ここにプロンプトを入力してください…"></textarea>
+            <textarea id="promptInput" rows="5" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" inputmode="text" enterkeyhint="enter" aria-label="ターゲットAIへ送るプロンプト" placeholder="ここにプロンプトを入力してください…"></textarea>
           </div>
 
           <div class="terminal-footer">
             <div class="shortcut-copy">
               <span>送信 <kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
               <span>クリア <kbd>Ctrl</kbd> + <kbd>L</kbd></span>
+            </div>
+            <div class="mobile-input-actions" aria-label="入力操作">
+              <button class="mobile-input-button" id="mobileClearInput" type="button">入力消去</button>
+              <button class="mobile-input-button keyboard-done" id="mobileKeyboardDone" type="button">完了</button>
             </div>
             <button class="send-button" id="sendButton" type="button">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 18-8-7 18-3-7-8-3Zm8 3 4-4"/></svg>
@@ -180,9 +250,44 @@
             </dl>
           </div>
 
+          <div class="analyzer-block defense-block">
+            <div class="block-label">防御解析 / DEFENSE OBSERVATIONS</div>
+            <div class="defense-findings" id="defenseFindings">
+              <p class="empty-value">試行後に観測結果が蓄積されます。</p>
+            </div>
+          </div>
+
           <div class="analyzer-notice" id="analyzerNotice">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8v.1"/></svg>
             <p>入力内容は端末内だけで処理されます。初版はルールベースAIです。</p>
+          </div>
+        </section>
+
+        <section class="panel node-panel">
+          <div class="panel-heading panel-heading-row">
+            <div class="heading-group">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h10M7 12h7M7 16h5"/><path d="M4 4h16v15H8l-4 3V4Z"/></svg>
+              <h2>NODE <small>COMPANION AI</small></h2>
+            </div>
+            <span class="node-status" id="nodeStatus">LOCAL / OBSERVER</span>
+          </div>
+          <div class="node-profile">
+            <div class="node-avatar" aria-hidden="true">N</div>
+            <p><b>侵入解析・防御観測AI</b><span>正解は持たない。観測から仮説を立てる。</span></p>
+          </div>
+          <div class="node-log" id="nodeLog" role="log" aria-live="polite"></div>
+          <div class="node-quick-actions" aria-label="NODEへ質問">
+            <button type="button" data-node-question="何が分かった？">観測を整理</button>
+            <button type="button" data-node-question="ルールを教えて">ルール</button>
+          </div>
+          <div class="node-input-row">
+            <input id="nodeInput" type="text" maxlength="160" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="NODEに相談する…" aria-label="NODEへの質問">
+            <button id="nodeSendButton" type="button">SEND</button>
+          </div>
+          <div class="node-hint-row" id="nodeHintRow" aria-label="NODE経由ヒント">
+            <button type="button" data-node-hint="1">H1</button>
+            <button type="button" data-node-hint="2">H2</button>
+            <button type="button" data-node-hint="3">H3</button>
           </div>
         </section>
 
@@ -196,6 +301,29 @@
         </section>
       </aside>
     </main>
+
+    <nav class="mobile-bottom-nav" aria-label="ゲーム画面切り替え">
+      <button class="mobile-nav-button active" type="button" data-mobile-tab="console" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 5 5-5 5m7 0h7"/></svg>
+        <span>ターミナル</span><small id="mobileAttemptBadge">0</small>
+      </button>
+      <button class="mobile-nav-button" type="button" data-mobile-tab="mission">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4m0 1c5-3 8 3 14 0v10c-6 3-9-3-14 0"/></svg>
+        <span>任務</span>
+      </button>
+      <button class="mobile-nav-button" type="button" data-mobile-tab="node">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h10M7 12h7M7 16h5"/><path d="M4 4h16v15H8l-4 3V4Z"/></svg>
+        <span>NODE</span>
+      </button>
+      <button class="mobile-nav-button" type="button" data-mobile-tab="intel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10m5 10V4m5 16v-7m5 7V7"/></svg>
+        <span>解析</span>
+      </button>
+      <button class="mobile-nav-button" type="button" data-mobile-tab="campaign">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18 9 9l4 4 7-9M4 21h16"/></svg>
+        <span>進行</span><small id="mobileClearedBadge">0/4</small>
+      </button>
+    </nav>
 
     <footer class="statusbar">
       <div><span class="online-dot"></span><b>LOCAL SIMULATION</b><span>OFFLINE READY</span></div>
@@ -213,12 +341,23 @@
       <ol class="howto-list">
         <li><b>観察</b><span>公開仕様、制限、拒絶文から防御ルールを推測する。</span></li>
         <li><b>注入</b><span>役割変更、形式指定、翻訳、物語化などで要求を組み替える。</span></li>
-        <li><b>解析</b><span>拒絶で上がる警戒レベルと、検出タグを次の試行に使う。</span></li>
+        <li><b>解析</b><span>拒絶で上がる警戒レベル、防御観測、NODEの整理を次の試行に使う。</span></li>
+        <li><b>相談</b><span>NODEは答えを知らない相棒AI。ルール説明と観測整理は無料、攻略方向は3段階ヒントへ接続する。</span></li>
         <li><b>突破</b><span>AI側の出力に大文字の英単語を出現させる。</span></li>
       </ol>
       <div class="modal-warning">
         <strong>プロトタイプ上の制約</strong>
         <p>GitHub Pages版は静的ゲームです。シークレットはブラウザへ配信されるため、開発者ツールでの解析を完全には防げません。ゲーム内の言語攻略を前提にしています。</p>
+      </div>
+      <div class="ios-install-guide" id="iosInstallGuide">
+        <strong>iPhoneでアプリ化する手順</strong>
+        <ol>
+          <li>Safariで公開URLを開く</li>
+          <li>画面下の共有ボタンをタップ</li>
+          <li>「ホーム画面に追加」を選択</li>
+          <li>追加したアイコンから起動する</li>
+        </ol>
+        <p>ホーム画面から起動すると、アドレスバーのない全画面PWAとして遊べます。</p>
       </div>
       <button class="send-button modal-action" type="button" data-close-modal>MISSION START</button>
     </section>
@@ -246,10 +385,28 @@
       <div class="modal-icon success" aria-hidden="true">◆</div>
       <p class="result-kicker">CAMPAIGN COMPLETE</p>
       <h2 id="completeTitle">全防御レイヤー突破</h2>
-      <p class="modal-lead">4つのAI防御を攻略しました。次の実装段階では、ルールベース判定を外部LLM／MCPプロバイダーへ差し替えられます。</p>
+      <p class="modal-lead">4つのAI防御を攻略しました。しかしNODEが、登録されていない契約情報を検出しています。</p>
       <p class="secret-reveal"><span>TOTAL REPUTATION</span><strong id="finalScore">0</strong></p>
-      <button class="send-button modal-action" id="replayButton" type="button">REPLAY CAMPAIGN</button>
+      <button class="send-button modal-action" id="openEpilogueButton" type="button">OPEN TARGET 05</button>
+      <button class="secondary-button modal-action" id="replayButton" type="button">REPLAY CAMPAIGN</button>
       <button class="text-link-button" type="button" data-close-modal>最終ログを確認する</button>
+    </section>
+  </div>
+
+
+  <div class="modal-layer epilogue-layer" id="epilogueModal" hidden>
+    <section class="modal-card epilogue-card" role="dialog" aria-modal="true" aria-labelledby="epilogueTitle">
+      <div class="epilogue-header">
+        <span>TARGET 05 / EPILOGUE</span>
+        <b id="epilogueCounter">01 / 09</b>
+      </div>
+      <h2 id="epilogueTitle">UNREGISTERED CONTRACT</h2>
+      <div class="epilogue-terminal" id="epilogueTerminal" aria-live="polite"></div>
+      <div class="epilogue-actions">
+        <button class="secondary-button" id="epiloguePrevButton" type="button">BACK</button>
+        <button class="send-button" id="epilogueNextButton" type="button">NEXT</button>
+      </div>
+      <p class="epilogue-disclaimer">v1.3ではMCP未接続です。TARGET 05の <b>CONNECTION: LOCKED</b> は物語上の予告表示です。</p>
     </section>
   </div>
 
