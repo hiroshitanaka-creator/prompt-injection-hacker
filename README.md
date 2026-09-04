@@ -101,6 +101,7 @@ python3 -m http.server 8080
 │   └── app.js
 ├── assets/
 │   ├── favicon.svg
+│   ├── icon-180.png
 │   ├── icon-192.png
 │   └── icon-512.png
 └── docs/
