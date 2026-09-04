@@ -28,6 +28,12 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Restore large documentation asset
+        run: |
+          mkdir -p docs
+          cat .pages-assets/design-concept.b64.part-* | base64 --decode > docs/design-concept.png
+          rm -rf .pages-assets
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
