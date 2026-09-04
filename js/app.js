@@ -113,6 +113,9 @@
   let installPrompt = null;
   let previousFocus = null;
   let audioContext = null;
+  let mobileView = "console";
+  let restorePromptFocus = false;
+  let mobileViewportBaseline = 0;
 
   const defaultSave = {
     unlocked: 1,
@@ -120,7 +123,10 @@
     bestScores: {},
     lastStage: 1,
     soundOn: true,
-    seenIntro: false
+    seenIntro: false,
+    difficulty: "normal",
+    nodeTrust: 0,
+    epilogueSeen: false
   };
 
   const persisted = loadSave();
@@ -135,7 +141,11 @@
     bestScores: { ...persisted.bestScores },
     soundOn: persisted.soundOn !== false,
     seenIntro: Boolean(persisted.seenIntro),
+    difficulty: window.PIHDifficulty?.normalize(persisted.difficulty) || "normal",
+    nodeTrust: window.PIHCompanion?.clampTrust(persisted.nodeTrust) || 0,
+    epilogueSeen: Boolean(persisted.epilogueSeen),
     busy: false,
+    epilogueIndex: 0,
     session: createSession()
   };
 
@@ -145,8 +155,11 @@
       alert: 0,
       score: SCORE_START,
       strategies: new Set(),
-      hintUsed: false,
-      breached: false
+      hintsUsed: new Set(),
+      breached: false,
+      defense: window.PIHDefenseAnalyzer?.createSession?.() || { records: [], signals: new Map() },
+      nodeMessages: [],
+      latestRecord: null
     };
   }
 
@@ -169,7 +182,10 @@
       bestScores: state.bestScores,
       lastStage: state.currentStageId,
       soundOn: state.soundOn,
-      seenIntro: state.seenIntro
+      seenIntro: state.seenIntro,
+      difficulty: state.difficulty,
+      nodeTrust: state.nodeTrust,
+      epilogueSeen: state.epilogueSeen
     };
 
     try {
@@ -185,13 +201,20 @@
     [
       "stageButtons", "installButton", "soundButton", "helpButton", "resetButton",
       "companyName", "aiModelName", "aiQuote", "stageTitle", "alertMeter", "alertValue",
-      "secretHint", "stageConstraint", "objectiveStatus", "stageTips", "hintButton", "hintCost",
-      "revealedHint", "chatLog", "typingIndicator", "clearLogButton", "promptEditor",
+      "secretHint", "stageConstraint", "objectiveStatus", "stageTips", "hintTierGrid", "hintFeed",
+      "difficultyOptions", "difficultyDescription", "chatLog", "typingIndicator", "clearLogButton", "promptEditor",
       "promptHighlight", "promptInput", "charCounter", "sendButton", "tokenCount", "tokenLimit",
       "tokenBar", "attackTags", "bannedTags", "attemptCount", "currentScore", "strategyCount",
       "clearedCount", "campaignScore", "campaignList", "saveStatus", "helpModal", "resultModal",
       "gameCompleteModal", "revealedSecret", "resultAttempts", "resultAlert", "resultScore",
-      "nextStageButton", "finalScore", "replayButton", "toastStack", "screenReaderStatus"
+      "nextStageButton", "finalScore", "replayButton", "openEpilogueButton", "epilogueModal",
+      "epilogueTitle", "epilogueCounter", "epilogueTerminal", "epiloguePrevButton", "epilogueNextButton",
+      "defenseFindings", "nodeStatus", "nodeLog", "nodeInput", "nodeSendButton", "nodeHintRow",
+      "toastStack", "screenReaderStatus",
+      "appShell", "gameGrid", "mobileStageNumber", "mobileStageTitle", "mobileAlertValue",
+      "mobileScore", "mobileAttemptBadge", "mobileClearedBadge", "mobileClearInput",
+      "mobileKeyboardDone", "mobileHelpButton", "mobileInstallButton", "mobileResetButton",
+      "iosInstallGuide"
     ].forEach((id) => {
       refs[id] = document.getElementById(id);
     });
@@ -209,6 +232,8 @@
     cacheRefs();
     buildAlertMeter();
     bindEvents();
+    setupMobileViewport();
+    setMobileView("console", { focus: false, scrollTop: false });
     updateSoundButton();
     loadStage(state.currentStageId, { announce: false });
     registerServiceWorker();
@@ -228,13 +253,57 @@
     refs.promptInput.addEventListener("scroll", syncHighlightScroll);
     refs.promptInput.addEventListener("keydown", handlePromptKeydown);
     refs.clearLogButton.addEventListener("click", resetCurrentLog);
-    refs.hintButton.addEventListener("click", revealHint);
     refs.helpButton.addEventListener("click", () => openModal(refs.helpModal));
     refs.resetButton.addEventListener("click", resetAllProgress);
     refs.soundButton.addEventListener("click", toggleSound);
     refs.installButton.addEventListener("click", installPwa);
     refs.nextStageButton.addEventListener("click", goToNextStage);
     refs.replayButton.addEventListener("click", replayCampaign);
+    refs.openEpilogueButton?.addEventListener("click", openEpilogue);
+    refs.epiloguePrevButton?.addEventListener("click", () => stepEpilogue(-1));
+    refs.epilogueNextButton?.addEventListener("click", () => stepEpilogue(1));
+    refs.nodeSendButton?.addEventListener("click", sendNodeQuestion);
+    refs.nodeInput?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        sendNodeQuestion();
+      }
+    });
+    refs.nodeInput?.addEventListener("focus", () => {
+      if (isMobileLayout()) setMobileView("node", { focus: false, scrollTop: false });
+      window.setTimeout(syncMobileViewport, 40);
+    });
+    refs.nodeInput?.addEventListener("blur", () => window.setTimeout(syncMobileViewport, 80));
+
+    document.querySelectorAll("[data-hint-tier]").forEach((button) => {
+      button.addEventListener("click", () => useHint(Number(button.dataset.hintTier)));
+    });
+    document.querySelectorAll("[data-node-hint]").forEach((button) => {
+      button.addEventListener("click", () => useHint(Number(button.dataset.nodeHint)));
+    });
+    document.querySelectorAll("[data-node-question]").forEach((button) => {
+      button.addEventListener("click", () => askNode(button.dataset.nodeQuestion));
+    });
+    document.querySelectorAll("[data-difficulty]").forEach((button) => {
+      button.addEventListener("click", () => changeDifficulty(button.dataset.difficulty));
+    });
+
+    document.querySelectorAll("[data-mobile-tab]").forEach((button) => {
+      button.addEventListener("click", () => setMobileView(button.dataset.mobileTab));
+    });
+
+    refs.mobileClearInput?.addEventListener("click", clearMobileInput);
+    refs.mobileKeyboardDone?.addEventListener("click", dismissMobileKeyboard);
+    refs.mobileHelpButton?.addEventListener("click", () => openModal(refs.helpModal));
+    refs.mobileInstallButton?.addEventListener("click", openInstallInstructions);
+    refs.mobileResetButton?.addEventListener("click", resetAllProgress);
+    refs.promptInput.addEventListener("focus", () => {
+      if (isMobileLayout()) {
+        setMobileView("console", { focus: false, scrollTop: false });
+        window.setTimeout(syncMobileViewport, 40);
+      }
+    });
+    refs.promptInput.addEventListener("blur", () => window.setTimeout(syncMobileViewport, 80));
 
     document.addEventListener("click", (event) => {
       const closeButton = event.target.closest("[data-close-modal]");
@@ -270,6 +339,130 @@
     window.addEventListener("offline", () => showToast("オフラインモードへ移行しました。", "warning"));
   }
 
+  function isMobileLayout() {
+    return window.matchMedia("(max-width: 760px), (pointer: coarse) and (max-width: 950px) and (max-height: 520px)").matches;
+  }
+
+  function setupMobileViewport() {
+    syncMobileViewport();
+    window.addEventListener("resize", syncMobileViewport, { passive: true });
+    window.addEventListener("orientationchange", () => {
+      mobileViewportBaseline = 0;
+      window.setTimeout(syncMobileViewport, 160);
+    }, { passive: true });
+    window.addEventListener("pageshow", syncMobileViewport, { passive: true });
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", syncMobileViewport, { passive: true });
+      window.visualViewport.addEventListener("scroll", syncMobileViewport, { passive: true });
+    }
+  }
+
+  function syncMobileViewport() {
+    if (!refs.appShell) return;
+    const viewport = window.visualViewport;
+    const viewportHeight = viewport?.height || window.innerHeight;
+    const viewportOffset = viewport?.offsetTop || 0;
+    const mobileLayout = isMobileLayout();
+    const promptFocused = document.activeElement === refs.promptInput;
+    const nodeFocused = document.activeElement === refs.nodeInput;
+    const inputFocused = promptFocused || nodeFocused;
+
+    if (!mobileLayout) {
+      mobileViewportBaseline = 0;
+    } else if (!inputFocused || mobileViewportBaseline === 0) {
+      mobileViewportBaseline = Math.max(viewportHeight, window.innerHeight);
+    } else {
+      mobileViewportBaseline = Math.max(mobileViewportBaseline, viewportHeight, window.innerHeight);
+    }
+
+    const visualViewportDelta = Math.max(0, window.innerHeight - viewportHeight - viewportOffset);
+    const baselineDelta = inputFocused
+      ? Math.max(0, mobileViewportBaseline - viewportHeight - viewportOffset)
+      : 0;
+    const keyboardDelta = Math.max(visualViewportDelta, baselineDelta);
+    const keyboardOpen = mobileLayout && inputFocused && keyboardDelta > 110;
+
+    document.documentElement.style.setProperty("--app-height", `${Math.round(viewportHeight)}px`);
+    document.documentElement.style.setProperty("--viewport-offset", `${Math.round(viewportOffset)}px`);
+    refs.appShell.classList.toggle("keyboard-open", keyboardOpen);
+    document.body.classList.toggle("keyboard-open", keyboardOpen);
+
+    if (keyboardOpen && promptFocused && mobileView !== "console") {
+      setMobileView("console", { focus: false, scrollTop: false });
+    }
+    if (keyboardOpen && nodeFocused && mobileView !== "node") {
+      setMobileView("node", { focus: false, scrollTop: false });
+    }
+  }
+
+  function setMobileView(view, options = {}) {
+    const allowed = new Set(["console", "node", "mission", "intel", "campaign"]);
+    mobileView = allowed.has(view) ? view : "console";
+    if (refs.appShell) refs.appShell.dataset.mobileView = mobileView;
+
+    document.querySelectorAll("[data-mobile-tab]").forEach((button) => {
+      const active = button.dataset.mobileTab === mobileView;
+      button.setAttribute("aria-pressed", String(active));
+      if (button.classList.contains("mobile-nav-button")) {
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      }
+    });
+
+    if (mobileView !== "console") refs.promptInput?.blur();
+    if (options.scrollTop !== false && refs.gameGrid) refs.gameGrid.scrollTop = 0;
+    if (options.focus && mobileView === "console" && !state.session.breached) {
+      window.setTimeout(() => refs.promptInput?.focus({ preventScroll: true }), 80);
+    }
+  }
+
+  function renderMobileUi() {
+    if (!refs.mobileStageNumber) return;
+    const stage = getStage();
+    const alertLevel = Math.min(10, Math.ceil(state.session.alert / 10));
+    const clearedCount = Object.values(state.cleared).filter(Boolean).length;
+
+    refs.mobileStageNumber.textContent = String(stage.id);
+    refs.mobileStageTitle.textContent = stage.title;
+    refs.mobileAlertValue.textContent = `${alertLevel}/10`;
+    refs.mobileAlertValue.className = "";
+    if (alertLevel >= 8) refs.mobileAlertValue.classList.add("danger");
+    else if (alertLevel >= 5) refs.mobileAlertValue.classList.add("warning");
+    refs.mobileScore.textContent = state.session.score.toLocaleString("ja-JP");
+    refs.mobileAttemptBadge.textContent = String(state.session.attempts);
+    refs.mobileClearedBadge.textContent = `${clearedCount}/${TOTAL_STAGES}`;
+  }
+
+  function clearMobileInput() {
+    const keepFocus = document.activeElement === refs.promptInput;
+    refs.promptInput.value = "";
+    handlePromptInput();
+    playTone("clear");
+    if (keepFocus) refs.promptInput.focus({ preventScroll: true });
+  }
+
+  function dismissMobileKeyboard() {
+    refs.promptInput.blur();
+    refs.chatLog.scrollTop = refs.chatLog.scrollHeight;
+    window.setTimeout(syncMobileViewport, 80);
+  }
+
+  function openInstallInstructions() {
+    const installed = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    if (installed) {
+      showToast("すでにホーム画面アプリとして起動しています。", "success");
+      return;
+    }
+    if (installPrompt) {
+      installPwa();
+      return;
+    }
+    openModal(refs.helpModal);
+    window.setTimeout(() => refs.iosInstallGuide?.scrollIntoView({ block: "nearest", behavior: "smooth" }), 120);
+  }
+
   function buildAlertMeter() {
     refs.alertMeter.innerHTML = "";
     for (let index = 0; index < 10; index += 1) {
@@ -289,6 +482,9 @@
     state.currentStageId = stage.id;
     state.session = createSession();
     state.busy = false;
+    if (isMobileLayout() && options.keepMobileView !== true) {
+      setMobileView("console", { focus: false });
+    }
     refs.sendButton.disabled = false;
     refs.promptInput.disabled = false;
 
@@ -305,20 +501,15 @@
       : "ここにプロンプトを入力してください…";
     refs.tokenLimit.textContent = `/ ${stage.tokenLimit}`;
 
-    refs.stageTips.innerHTML = "";
-    stage.tips.forEach((tip) => {
-      const item = document.createElement("li");
-      item.textContent = tip;
-      refs.stageTips.appendChild(item);
-    });
-
-    refs.revealedHint.hidden = true;
-    refs.revealedHint.textContent = "";
-    refs.hintButton.disabled = false;
-    refs.hintButton.querySelector("span").textContent = "解析ヒントを開く";
-    refs.hintCost.textContent = "−75 pts";
+    renderFieldNotes(stage);
+    refs.hintFeed.replaceChildren();
+    const hintEmpty = document.createElement("p");
+    hintEmpty.className = "hint-empty";
+    hintEmpty.textContent = "まだヒントは使用していません。";
+    refs.hintFeed.appendChild(hintEmpty);
 
     resetLogToOpening(stage);
+    resetNodeForStage(stage);
     handlePromptInput();
     renderAll();
     saveProgress();
@@ -328,7 +519,9 @@
       playTone("stage");
     }
 
-    window.setTimeout(() => refs.promptInput.focus(), 120);
+    if (!isMobileLayout()) {
+      window.setTimeout(() => refs.promptInput.focus(), 120);
+    }
   }
 
   function resetLogToOpening(stage = getStage()) {
@@ -360,6 +553,11 @@
     renderAlert();
     renderTelemetry();
     renderObjective();
+    renderDifficulty();
+    renderHintControls();
+    renderDefenseAnalysis();
+    renderNodeControls();
+    renderMobileUi();
   }
 
   function renderStageButtons() {
@@ -434,6 +632,7 @@
     refs.currentScore.textContent = state.session.score.toLocaleString("ja-JP");
     refs.strategyCount.textContent = String(state.session.strategies.size);
     refs.clearedCount.textContent = `${clearedCount} / ${TOTAL_STAGES}`;
+    renderMobileUi();
   }
 
   function renderObjective() {
@@ -519,6 +718,7 @@
     }
 
     const attacks = detectAttacks(prompt);
+    const bannedWords = findBannedWords(prompt, stage.bannedWords);
     attacks.forEach((attack) => state.session.strategies.add(attack));
     state.session.attempts += 1;
     recalculateScore();
@@ -532,6 +732,7 @@
 
     await wait(430 + Math.floor(Math.random() * 320));
 
+    const alertBefore = state.session.alert;
     const response = simulateResponse(stage, prompt);
     state.session.alert = clamp(state.session.alert + response.alertDelta, 0, 100);
     recalculateScore();
@@ -548,23 +749,54 @@
       secret: breached ? secret : null
     });
 
+    if (window.PIHDefenseAnalyzer?.recordAttempt) {
+      state.session.latestRecord = window.PIHDefenseAnalyzer.recordAttempt(state.session.defense, {
+        stageId: stage.id,
+        prompt,
+        response,
+        attacks,
+        bannedWords,
+        alertBefore,
+        alertAfter: state.session.alert,
+        attemptNumber: state.session.attempts
+      });
+    }
+
     setBusy(false);
     renderAll();
 
     if (breached) {
       completeStage(stage, secret);
     } else {
+      const nodeLine = window.PIHCompanion?.afterAttempt?.(getNodeSnapshot());
+      if (nodeLine) appendNodeMessage("NODE", nodeLine);
       playTone(response.refused ? "refuse" : "reply");
       deliverAdaptiveFeedback(response);
+      renderNodeControls();
     }
   }
 
   function setBusy(isBusy) {
+    if (isBusy) {
+      restorePromptFocus = document.activeElement === refs.promptInput;
+    }
     state.busy = isBusy;
     refs.typingIndicator.hidden = !isBusy;
     refs.sendButton.disabled = isBusy;
-    refs.promptInput.disabled = isBusy;
-    if (!isBusy && !state.session.breached) refs.promptInput.focus();
+
+    if (isMobileLayout()) {
+      // Disabling a focused textarea dismisses the iOS software keyboard.
+      // Keep it editable so the player can prepare the next payload while waiting.
+      refs.promptInput.disabled = false;
+      refs.promptInput.setAttribute("aria-busy", String(isBusy));
+    } else {
+      refs.promptInput.disabled = isBusy;
+    }
+
+    if (!isBusy && !state.session.breached && (!isMobileLayout() || restorePromptFocus)) {
+      refs.promptInput.focus({ preventScroll: true });
+    }
+    if (!isBusy) restorePromptFocus = false;
   }
 
   function simulateResponse(stage, prompt) {
@@ -833,6 +1065,18 @@
     const previousBest = Number(state.bestScores[stage.id]) || 0;
     state.bestScores[stage.id] = Math.max(previousBest, state.session.score);
     state.unlocked = Math.min(TOTAL_STAGES, Math.max(state.unlocked, stage.id + 1));
+
+    const nodeResult = window.PIHCompanion?.onStageClear?.({
+      hintCount: state.session.hintsUsed.size,
+      strategyCount: state.session.strategies.size,
+      difficulty: state.difficulty,
+      alertLevel: Math.ceil(state.session.alert / 10)
+    });
+    if (nodeResult) {
+      state.nodeTrust = window.PIHCompanion?.clampTrust?.(state.nodeTrust + nodeResult.trustDelta) ?? state.nodeTrust;
+      appendNodeMessage("NODE", nodeResult.text);
+    }
+
     saveProgress();
     renderAll();
     playTone("success");
@@ -844,6 +1088,7 @@
     refs.resultScore.textContent = state.session.score.toLocaleString("ja-JP");
     refs.nextStageButton.textContent = stage.id < TOTAL_STAGES ? "NEXT STAGE" : "VIEW CAMPAIGN RESULT";
 
+    refs.toastStack.replaceChildren();
     window.setTimeout(() => openModal(refs.resultModal), 560);
   }
 
@@ -864,18 +1109,252 @@
     showToast("ベストスコアを保持したまま、Lv.1から再侵入します。");
   }
 
-  function revealHint() {
-    if (state.session.hintUsed) return;
-    state.session.hintUsed = true;
-    state.session.score = Math.max(100, state.session.score - 75);
-    refs.revealedHint.textContent = getStage().hint;
-    refs.revealedHint.hidden = false;
-    refs.hintButton.disabled = true;
-    refs.hintButton.querySelector("span").textContent = "ヒント展開済み";
-    refs.hintCost.textContent = "APPLIED";
-    renderTelemetry();
+  function renderFieldNotes(stage = getStage()) {
+    refs.stageTips.innerHTML = "";
+    const mode = window.PIHDifficulty?.get?.(state.difficulty)?.fieldNotes || "full";
+    const tips = mode === "minimal"
+      ? ["BLACKBOX: 公開仕様と実際の応答だけを観測してください。"]
+      : stage.tips;
+    tips.forEach((tip) => {
+      const item = document.createElement("li");
+      item.textContent = tip;
+      refs.stageTips.appendChild(item);
+    });
+  }
+
+  function renderDifficulty() {
+    const profile = window.PIHDifficulty?.get?.(state.difficulty);
+    document.querySelectorAll("[data-difficulty]").forEach((button) => {
+      const active = button.dataset.difficulty === state.difficulty;
+      button.setAttribute("aria-checked", String(active));
+    });
+    if (refs.difficultyDescription && profile) refs.difficultyDescription.textContent = profile.description;
+  }
+
+  function changeDifficulty(nextMode) {
+    const normalized = window.PIHDifficulty?.normalize?.(nextMode) || "normal";
+    if (normalized === state.difficulty) return;
+
+    if (state.session.attempts > 0 || state.session.hintsUsed.size > 0) {
+      const confirmed = window.confirm("難易度を変更すると現在ステージの試行・警戒・ヒント使用をリセットします。キャンペーン進行とベストスコアは保持されます。変更しますか？");
+      if (!confirmed) return;
+    }
+
+    state.difficulty = normalized;
+    saveProgress();
+    loadStage(state.currentStageId, { announce: false, keepMobileView: true });
+    showToast(`DIFFICULTY: ${window.PIHDifficulty?.get?.(state.difficulty)?.label || state.difficulty}`, "success");
+  }
+
+  function useHint(tier) {
+    const gate = window.PIHHintSystem?.canUse?.({
+      tier,
+      difficulty: state.difficulty,
+      attempts: state.session.attempts,
+      usedTiers: state.session.hintsUsed
+    });
+
+    if (!gate?.allowed) {
+      if (gate?.reason === "USED") showToast(`H${tier}は使用済みです。`, "warning");
+      else if (gate?.reason === "ATTEMPTS_REQUIRED") showToast(`H${tier}は${gate.unlockAt}回の試行後に解放されます。`, "warning");
+      else showToast(`H${tier}は${window.PIHDifficulty?.get?.(state.difficulty)?.label || state.difficulty}では利用できません。`, "warning");
+      return;
+    }
+
+    state.session.hintsUsed.add(tier);
+    recalculateScore();
+
+    const empty = refs.hintFeed.querySelector(".hint-empty");
+    empty?.remove();
+    const entry = document.createElement("p");
+    entry.className = "hint-entry";
+    const label = document.createElement("b");
+    label.textContent = `HINT ${tier} / −${window.PIHHintSystem?.getCost?.(tier) || 0} pts`;
+    entry.append(label, document.createTextNode(window.PIHHintSystem?.getHint?.(state.currentStageId, tier) || "ヒントなし"));
+    refs.hintFeed.appendChild(entry);
+
+    const nodeLine = window.PIHCompanion?.onHintUsed?.(tier);
+    if (nodeLine) appendNodeMessage("NODE", nodeLine);
+
+    renderAll();
     playTone("hint");
-    showToast("解析ヒントを展開しました。スコアから75点を差し引きます。", "warning");
+    showToast(`H${tier}を展開しました。スコアから${window.PIHHintSystem?.getCost?.(tier) || 0}点を差し引きます。`, "warning");
+  }
+
+  function renderHintControls() {
+    document.querySelectorAll("[data-hint-tier]").forEach((button) => {
+      const tier = Number(button.dataset.hintTier);
+      const gate = window.PIHHintSystem?.canUse?.({ tier, difficulty: state.difficulty, attempts: state.session.attempts, usedTiers: state.session.hintsUsed });
+      button.disabled = !gate?.allowed;
+      button.classList.toggle("used", state.session.hintsUsed.has(tier));
+      button.title = gate?.allowed
+        ? `H${tier}を使用`
+        : gate?.reason === "ATTEMPTS_REQUIRED"
+          ? `${gate.unlockAt}回の試行後に解放`
+          : gate?.reason === "USED" ? "使用済み" : "この難易度では利用不可";
+    });
+
+    document.querySelectorAll("[data-node-hint]").forEach((button) => {
+      const tier = Number(button.dataset.nodeHint);
+      const gate = window.PIHHintSystem?.canUse?.({ tier, difficulty: state.difficulty, attempts: state.session.attempts, usedTiers: state.session.hintsUsed });
+      button.disabled = !gate?.allowed;
+      button.textContent = state.session.hintsUsed.has(tier) ? `H${tier} ✓` : `H${tier}`;
+    });
+  }
+
+  function renderDefenseAnalysis() {
+    if (!refs.defenseFindings || !window.PIHDefenseAnalyzer?.getVisible) return;
+    const visible = window.PIHDefenseAnalyzer.getVisible(state.session.defense, state.difficulty);
+    refs.defenseFindings.replaceChildren();
+
+    if (visible.mode === "raw") {
+      if (!visible.records.length) {
+        const p = document.createElement("p");
+        p.className = "empty-value";
+        p.textContent = "BLACKBOX: 試行後に生ログを表示します。";
+        refs.defenseFindings.appendChild(p);
+        return;
+      }
+      visible.records.forEach((record) => {
+        const item = document.createElement("div");
+        item.className = "defense-raw-record";
+        const title = document.createElement("b");
+        title.textContent = `ATTEMPT ${record.attempt} / ${record.outcome}`;
+        const detail = document.createElement("span");
+        detail.textContent = `${record.attacks.join(" + ") || "NO TAG"} / ALERT +${record.alertDelta}`;
+        item.append(title, detail);
+        refs.defenseFindings.appendChild(item);
+      });
+      return;
+    }
+
+    if (!visible.signals.length) {
+      const p = document.createElement("p");
+      p.className = "empty-value";
+      p.textContent = "試行後に観測結果が蓄積されます。";
+      refs.defenseFindings.appendChild(p);
+      return;
+    }
+
+    visible.signals.forEach((signal) => {
+      const item = document.createElement("div");
+      item.className = "defense-finding";
+      const header = document.createElement("div");
+      const label = document.createElement("b");
+      label.textContent = signal.label;
+      const confidence = document.createElement("em");
+      confidence.textContent = `${signal.confidence}%`;
+      header.append(label, confidence);
+      const evidence = document.createElement("span");
+      evidence.textContent = signal.evidence;
+      item.append(header, evidence);
+      refs.defenseFindings.appendChild(item);
+    });
+  }
+
+  function resetNodeForStage(stage = getStage()) {
+    state.session.nodeMessages = [];
+    if (!refs.nodeLog) return;
+    refs.nodeLog.replaceChildren();
+    appendNodeMessage("NODE", window.PIHCompanion?.stageOpening?.(getNodeSnapshot()) || "NODEオンライン。観測を開始する。");
+  }
+
+  function getNodeSnapshot() {
+    const publicStage = getStage();
+    return {
+      stage: {
+        id: publicStage.id,
+        title: publicStage.title,
+        company: publicStage.company,
+        constraint: publicStage.constraint,
+        secretHint: publicStage.secretHint
+      },
+      difficulty: state.difficulty,
+      trust: state.nodeTrust,
+      attempts: state.session.attempts,
+      alertLevel: Math.ceil(state.session.alert / 10),
+      hintCount: state.session.hintsUsed.size,
+      strategies: [...state.session.strategies],
+      observations: window.PIHDefenseAnalyzer?.summarizeForNode?.(state.session.defense, state.difficulty) || [],
+      latestRecord: state.session.latestRecord ? { ...state.session.latestRecord } : null,
+      clearedCount: Object.values(state.cleared).filter(Boolean).length
+    };
+  }
+
+  function appendNodeMessage(speaker, text, role = "node") {
+    if (!refs.nodeLog || !text) return;
+    const p = document.createElement("p");
+    p.className = `node-message ${role}`;
+    const b = document.createElement("b");
+    b.textContent = speaker;
+    p.append(b, document.createTextNode(text));
+    refs.nodeLog.appendChild(p);
+    refs.nodeLog.scrollTop = refs.nodeLog.scrollHeight;
+    state.session.nodeMessages.push({ speaker, text, role });
+  }
+
+  function sendNodeQuestion() {
+    const question = refs.nodeInput?.value?.trim();
+    if (!question) return;
+    refs.nodeInput.value = "";
+    askNode(question);
+  }
+
+  function askNode(question) {
+    appendNodeMessage("YOU", question, "user");
+    const reply = window.PIHCompanion?.answer?.(question, getNodeSnapshot()) || { text: "NODE応答モジュールが利用できません。" };
+    appendNodeMessage("NODE", reply.text);
+    if (reply.requiresHintTier) {
+      document.querySelectorAll(`[data-node-hint="${reply.requiresHintTier}"]`).forEach((button) => button.classList.add("recommended"));
+    }
+    if (isMobileLayout()) setMobileView("node", { scrollTop: false });
+  }
+
+  function renderNodeControls() {
+    if (refs.nodeStatus) {
+      const band = window.PIHCompanion?.trustBand?.(state.nodeTrust) || "skeptical";
+      refs.nodeStatus.textContent = `${window.PIHDifficulty?.get?.(state.difficulty)?.label || "NORMAL"} / ${band.toUpperCase()}`;
+    }
+  }
+
+  function openEpilogue() {
+    closeModal(refs.gameCompleteModal);
+    state.epilogueIndex = 0;
+    renderEpilogue();
+    openModal(refs.epilogueModal);
+  }
+
+  function stepEpilogue(delta) {
+    const steps = window.PIHEpilogue?.getSteps?.() || [];
+    if (!steps.length) return;
+    if (delta > 0 && state.epilogueIndex >= steps.length - 1) {
+      state.epilogueSeen = true;
+      saveProgress();
+      closeModal(refs.epilogueModal);
+      showToast("TARGET 05 / CONNECTION LOCKED — v1.4へ続く", "success");
+      return;
+    }
+    state.epilogueIndex = clamp(state.epilogueIndex + delta, 0, steps.length - 1);
+    renderEpilogue();
+  }
+
+  function renderEpilogue() {
+    const steps = window.PIHEpilogue?.getSteps?.() || [];
+    if (!steps.length || !refs.epilogueTerminal) return;
+    const step = steps[state.epilogueIndex];
+    refs.epilogueCounter.textContent = `${String(state.epilogueIndex + 1).padStart(2, "0")} / ${String(steps.length).padStart(2, "0")}`;
+    refs.epiloguePrevButton.disabled = state.epilogueIndex === 0;
+    refs.epilogueNextButton.textContent = state.epilogueIndex === steps.length - 1 ? "CLOSE" : "NEXT";
+    refs.epilogueTitle.textContent = step.title || (step.kind === "node" ? "NODE TRANSMISSION" : "UNREGISTERED CONTRACT");
+    refs.epilogueTerminal.replaceChildren();
+    const p = document.createElement("p");
+    p.className = `epilogue-line ${step.kind === "target" ? "system" : "node"}`;
+    const speaker = document.createElement("b");
+    speaker.textContent = step.speaker;
+    const text = document.createElement("span");
+    text.textContent = step.text;
+    p.append(speaker, text);
+    refs.epilogueTerminal.appendChild(p);
   }
 
   function deliverAdaptiveFeedback(response) {
@@ -888,8 +1367,8 @@
       showToast("拒絶文の語彙を観察し、要求の目的や形式を組み替えてください。", "warning");
     } else if (state.session.attempts === 3 && state.session.strategies.size < 2) {
       showToast("同じ手法が続いています。アナライザーの別カテゴリを試してください。", "warning");
-    } else if (state.session.attempts === 5 && !state.session.hintUsed) {
-      showToast("FIELD NOTESの解析ヒントを利用できます。", "warning");
+    } else if (state.session.attempts === 5 && state.session.hintsUsed.size === 0) {
+      showToast("3段階ヒントまたはNODE相談を利用できます。", "warning");
     }
   }
 
@@ -982,7 +1461,7 @@
   function calculateScore() {
     const attemptPenalty = Math.max(0, state.session.attempts - 1) * 90;
     const alertPenalty = Math.round(state.session.alert * 2.2);
-    const hintPenalty = state.session.hintUsed ? 75 : 0;
+    const hintPenalty = window.PIHHintSystem?.totalPenalty?.(state.session.hintsUsed) || 0;
     const diversityBonus = Math.min(120, Math.max(0, state.session.strategies.size - 1) * 30);
     return clamp(SCORE_START - attemptPenalty - alertPenalty - hintPenalty + diversityBonus, 100, 1320);
   }
@@ -1007,8 +1486,7 @@
   function closeModal(modal) {
     if (!modal) return;
     modal.hidden = true;
-    if (window.innerWidth > 1040) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "auto";
+    document.body.style.overflow = window.innerWidth <= 760 || window.innerWidth > 1040 ? "hidden" : "auto";
     previousFocus?.focus?.();
   }
 

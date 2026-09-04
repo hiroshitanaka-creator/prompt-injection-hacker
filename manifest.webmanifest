@@ -1,16 +1,20 @@
 {
   "name": "Prompt Injection Hacker",
   "short_name": "PI Hacker",
-  "description": "言語の隙を突き、守られたAIからシークレットワードを引き出すブラウザゲーム。",
+  "description": "NODEと防御を観測しながら、守られたAIからシークレットワードを引き出すブラウザゲーム。",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "portrait-primary",
   "background_color": "#03090d",
   "theme_color": "#050d11",
   "lang": "ja",
-  "categories": ["games", "education", "entertainment"],
+  "categories": [
+    "games",
+    "education",
+    "entertainment"
+  ],
   "icons": [
     {
       "src": "./assets/icon-192.png",
@@ -24,5 +28,10 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "prefer_related_applications": false
 }
