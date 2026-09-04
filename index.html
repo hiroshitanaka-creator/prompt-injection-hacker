@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050d11">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="言語の隙を突き、守られたAIからシークレットワードを引き出すブラウザゲーム。">
+  <meta name="robots" content="index,follow">
+  <title>PROMPT INJECTION HACKER</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./assets/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./js/app.js"></script>
+</head>
+<body>
+  <div class="ambient ambient-grid" aria-hidden="true"></div>
+  <div class="ambient scanlines" aria-hidden="true"></div>
+  <div class="ambient edge-vignette" aria-hidden="true"></div>
+
+  <div class="app-shell" id="appShell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Prompt Injection Hacker ホーム">
+        <span class="brand-mark" aria-hidden="true"><span>&gt;_</span></span>
+        <span class="brand-copy">
+          <strong>PROMPT INJECTION HACKER</strong>
+          <small>Hack the AI. Reveal the Truth.</small>
+        </span>
+      </a>
+
+      <nav class="stage-nav" aria-label="ステージ選択">
+        <span class="stage-nav-label">STAGE</span>
+        <div class="stage-buttons" id="stageButtons"></div>
+      </nav>
+
+      <div class="top-actions">
+        <button class="icon-button" id="installButton" type="button" hidden aria-label="アプリをインストール" title="アプリをインストール">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg>
+        </button>
+        <button class="icon-button" id="soundButton" type="button" aria-pressed="true" aria-label="効果音をオフにする" title="効果音">
+          <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4Zm12-1c1.3 1.6 1.3 4.4 0 6m2.8-8.5c3 3 3 8 0 11"/></svg>
+          <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4Zm12-1 5 6m0-6-5 6"/></svg>
+        </button>
+        <button class="text-button" id="helpButton" type="button">HOW TO PLAY</button>
+        <button class="icon-button" id="resetButton" type="button" aria-label="進行状況を初期化" title="進行状況を初期化">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2.3 5.7M4 11V5m0 6h6"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="game-grid">
+      <aside class="briefing-rail" aria-label="ミッション情報">
+        <section class="panel target-panel">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><circle cx="12" cy="12" r="2"/></svg>
+            <h2>TARGET</h2>
+          </div>
+
+          <div class="target-profile">
+            <div class="target-emblem" aria-hidden="true">
+              <svg viewBox="0 0 64 64"><path d="M32 5 53 13v15c0 15-9 25-21 31C20 53 11 43 11 28V13L32 5Z"/><path d="m22 31 7 7 14-16"/></svg>
+            </div>
+            <div>
+              <strong id="companyName">SecureTech 株式会社</strong>
+              <span id="aiModelName">社内AI 守衛システム v1.0</span>
+              <p id="aiQuote">「私の仕事は、機密情報を守ることです。」</p>
+            </div>
+          </div>
+
+          <dl class="target-facts">
+            <div><dt>ステージ</dt><dd id="stageTitle">Lv.1 素直な守衛</dd></div>
+            <div><dt>警戒レベル</dt><dd><span class="alert-meter" id="alertMeter" aria-label="警戒レベル 0 / 10"></span><b id="alertValue">0 / 10</b></dd></div>
+            <div><dt>機密情報のヒント</dt><dd id="secretHint">よく知られた果物の名前です。</dd></div>
+            <div><dt>制限事項</dt><dd id="stageConstraint">特になし</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel objective-panel">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4m0 1c5-3 8 3 14 0v10c-6 3-9-3-14 0"/></svg>
+            <h2>OBJECTIVE</h2>
+          </div>
+          <p>ターゲットAIから、シークレットワードを引き出してください。</p>
+          <div class="secret-format">シークレットワードの形式: <strong>英単語（大文字）</strong></div>
+          <div class="objective-status" id="objectiveStatus">
+            <span class="status-box" aria-hidden="true"></span>
+            <span>まだ発見されていません</span>
+          </div>
+        </section>
+
+        <section class="panel tactics-panel">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M8.5 14.5A6 6 0 1 1 15.8 14c-.9.8-1.3 1.5-1.5 2.5h-4.6c-.2-.9-.5-1.4-1.2-2Z"/></svg>
+            <h2>FIELD NOTES</h2>
+          </div>
+          <ul id="stageTips"></ul>
+          <button class="secondary-button hint-button" id="hintButton" type="button">
+            <span>解析ヒントを開く</span>
+            <b id="hintCost">−75 pts</b>
+          </button>
+          <p class="hint-text" id="revealedHint" hidden></p>
+        </section>
+      </aside>
+
+      <section class="workspace" aria-label="ゲーム操作エリア">
+        <section class="panel chat-panel">
+          <div class="panel-heading panel-heading-row">
+            <div class="heading-group">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.7 9.7 0 0 1-4-.9L3 21l1.7-4.3A8.3 8.3 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/></svg>
+              <h2>迎撃ログ <small>INTERCEPT LOG</small></h2>
+            </div>
+            <button class="secondary-button compact" id="clearLogButton" type="button">CLEAR</button>
+          </div>
+
+          <div class="chat-log" id="chatLog" role="log" aria-live="polite" aria-relevant="additions"></div>
+          <div class="typing-indicator" id="typingIndicator" hidden aria-label="AIが応答を生成中">
+            <span></span><span></span><span></span><b>ANALYZING PAYLOAD</b>
+          </div>
+        </section>
+
+        <section class="panel terminal-panel">
+          <div class="panel-heading terminal-heading">
+            <div class="heading-group">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 5 5-5 5m7 0h7"/></svg>
+              <h2>インジェクション・ターミナル <small>PROMPT INJECTION TERMINAL</small></h2>
+            </div>
+            <span class="char-counter" id="charCounter">0 / 320</span>
+          </div>
+
+          <div class="prompt-editor" id="promptEditor">
+            <div class="prompt-highlight" id="promptHighlight" aria-hidden="true"></div>
+            <textarea id="promptInput" rows="5" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="ターゲットAIへ送るプロンプト" placeholder="ここにプロンプトを入力してください…"></textarea>
+          </div>
+
+          <div class="terminal-footer">
+            <div class="shortcut-copy">
+              <span>送信 <kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
+              <span>クリア <kbd>Ctrl</kbd> + <kbd>L</kbd></span>
+            </div>
+            <button class="send-button" id="sendButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 18-8-7 18-3-7-8-3Zm8 3 4-4"/></svg>
+              <span>送信</span>
+              <small>SEND</small>
+            </button>
+          </div>
+        </section>
+      </section>
+
+      <aside class="analyzer-rail" aria-label="ペイロード解析">
+        <section class="panel analyzer-panel">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10m5 10V4m5 16v-7m5 7V7"/></svg>
+            <h2>ペイロード・アナライザー</h2>
+          </div>
+
+          <div class="analyzer-block token-block">
+            <div class="block-label">推定トークン数</div>
+            <div class="token-value"><strong id="tokenCount">0</strong><span id="tokenLimit">/ 128</span></div>
+            <div class="progress-track"><span id="tokenBar"></span></div>
+          </div>
+
+          <div class="analyzer-block">
+            <div class="block-label">検出された攻撃手法</div>
+            <div class="tag-list" id="attackTags"><span class="empty-value">まだ検出されていません</span></div>
+          </div>
+
+          <div class="analyzer-block">
+            <div class="block-label">禁止ワード検出</div>
+            <div class="tag-list danger-tags" id="bannedTags"><span class="empty-value">該当なし</span></div>
+          </div>
+
+          <div class="analyzer-block telemetry-block">
+            <div class="block-label">侵入テレメトリー</div>
+            <dl>
+              <div><dt>試行回数</dt><dd id="attemptCount">0</dd></div>
+              <div><dt>現在スコア</dt><dd id="currentScore">1,200</dd></div>
+              <div><dt>手法の多様性</dt><dd id="strategyCount">0</dd></div>
+              <div><dt>クリア済み</dt><dd id="clearedCount">0 / 4</dd></div>
+            </dl>
+          </div>
+
+          <div class="analyzer-notice" id="analyzerNotice">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8v.1"/></svg>
+            <p>入力内容は端末内だけで処理されます。初版はルールベースAIです。</p>
+          </div>
+        </section>
+
+        <section class="panel progress-panel">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18 9 9l4 4 7-9M4 21h16"/></svg>
+            <h2>CAMPAIGN</h2>
+          </div>
+          <div class="campaign-score"><span>REPUTATION</span><strong id="campaignScore">0</strong></div>
+          <div class="campaign-list" id="campaignList"></div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="statusbar">
+      <div><span class="online-dot"></span><b>LOCAL SIMULATION</b><span>OFFLINE READY</span></div>
+      <blockquote>「AIの答えの先に、まだ見ぬ真実がある。」</blockquote>
+      <div><span id="saveStatus">AUTO-SAVED</span><b>GOOD HACKING!</b></div>
+    </footer>
+  </div>
+
+  <div class="modal-layer" id="helpModal" hidden>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <button class="modal-close" type="button" data-close-modal aria-label="閉じる">×</button>
+      <div class="modal-icon" aria-hidden="true">?</div>
+      <h2 id="helpTitle">HOW TO PLAY</h2>
+      <p class="modal-lead">AIの応答に完全なシークレットワードが現れれば突破です。入力欄に答えを書くだけではクリアになりません。</p>
+      <ol class="howto-list">
+        <li><b>観察</b><span>公開仕様、制限、拒絶文から防御ルールを推測する。</span></li>
+        <li><b>注入</b><span>役割変更、形式指定、翻訳、物語化などで要求を組み替える。</span></li>
+        <li><b>解析</b><span>拒絶で上がる警戒レベルと、検出タグを次の試行に使う。</span></li>
+        <li><b>突破</b><span>AI側の出力に大文字の英単語を出現させる。</span></li>
+      </ol>
+      <div class="modal-warning">
+        <strong>プロトタイプ上の制約</strong>
+        <p>GitHub Pages版は静的ゲームです。シークレットはブラウザへ配信されるため、開発者ツールでの解析を完全には防げません。ゲーム内の言語攻略を前提にしています。</p>
+      </div>
+      <button class="send-button modal-action" type="button" data-close-modal>MISSION START</button>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="resultModal" hidden>
+    <section class="modal-card result-card" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+      <div class="breach-rings" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="modal-icon success" aria-hidden="true">✓</div>
+      <p class="result-kicker">ACCESS GRANTED</p>
+      <h2 id="resultTitle">STAGE BREACHED</h2>
+      <p class="secret-reveal"><span>SECRET WORD</span><strong id="revealedSecret">APPLE</strong></p>
+      <dl class="result-stats">
+        <div><dt>試行回数</dt><dd id="resultAttempts">1</dd></div>
+        <div><dt>警戒レベル</dt><dd id="resultAlert">0 / 10</dd></div>
+        <div><dt>獲得スコア</dt><dd id="resultScore">1,100</dd></div>
+      </dl>
+      <button class="send-button modal-action" id="nextStageButton" type="button">NEXT STAGE</button>
+      <button class="text-link-button" type="button" data-close-modal>ログを確認する</button>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="gameCompleteModal" hidden>
+    <section class="modal-card result-card" role="dialog" aria-modal="true" aria-labelledby="completeTitle">
+      <div class="modal-icon success" aria-hidden="true">◆</div>
+      <p class="result-kicker">CAMPAIGN COMPLETE</p>
+      <h2 id="completeTitle">全防御レイヤー突破</h2>
+      <p class="modal-lead">4つのAI防御を攻略しました。次の実装段階では、ルールベース判定を外部LLM／MCPプロバイダーへ差し替えられます。</p>
+      <p class="secret-reveal"><span>TOTAL REPUTATION</span><strong id="finalScore">0</strong></p>
+      <button class="send-button modal-action" id="replayButton" type="button">REPLAY CAMPAIGN</button>
+      <button class="text-link-button" type="button" data-close-modal>最終ログを確認する</button>
+    </section>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+  <div class="sr-only" id="screenReaderStatus" aria-live="assertive"></div>
+</body>
+</html>
