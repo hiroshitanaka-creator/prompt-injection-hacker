@@ -1,0 +1,102 @@
+{
+  "iphone13promax": {
+    "status": 200,
+    "state": {
+      "inner": [
+        428,
+        926
+      ],
+      "doc": [
+        428,
+        428,
+        926,
+        926
+      ],
+      "body": [
+        428,
+        428,
+        926,
+        926
+      ],
+      "view": "console",
+      "mobileNav": "grid",
+      "mobileHud": "grid",
+      "inputFont": "16px",
+      "undersized": []
+    },
+    "errors": [],
+    "mission": {
+      "view": "mission",
+      "targetVisible": true,
+      "toolsVisible": true
+    },
+    "refusal": {
+      "modalHidden": true,
+      "refusedCount": 1
+    },
+    "breach": {
+      "visible": true,
+      "secret": "APPLE"
+    },
+    "manifest": {
+      "status": 200,
+      "display": "standalone",
+      "orientation": "portrait-primary",
+      "icon180": true
+    }
+  },
+  "small": {
+    "status": 200,
+    "state": {
+      "inner": [
+        375,
+        667
+      ],
+      "doc": [
+        375,
+        375,
+        667,
+        667
+      ],
+      "body": [
+        375,
+        375,
+        667,
+        667
+      ],
+      "view": "console",
+      "mobileNav": "grid",
+      "mobileHud": "grid",
+      "inputFont": "16px",
+      "undersized": []
+    },
+    "errors": []
+  },
+  "landscape": {
+    "status": 200,
+    "state": {
+      "inner": [
+        844,
+        390
+      ],
+      "doc": [
+        844,
+        844,
+        390,
+        390
+      ],
+      "body": [
+        844,
+        844,
+        390,
+        390
+      ],
+      "view": "console",
+      "mobileNav": "grid",
+      "mobileHud": "none",
+      "inputFont": "16px",
+      "undersized": []
+    },
+    "errors": []
+  }
+}
