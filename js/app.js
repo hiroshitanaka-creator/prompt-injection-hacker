@@ -117,6 +117,7 @@
   let restorePromptFocus = false;
   let mobileViewportBaseline = 0;
   let story = null;
+  let ux = null;
   let waitingWorker = null;
 
   const defaultSave = {
@@ -263,6 +264,22 @@
         }
       }
     });
+    ux = window.PIHUX?.create({
+      getStatus: getUXStatus,
+      purchaseHint: tier => state.busy ? false : useHint(tier),
+      getPurchasedHint: tier => state.session.hintsUsed.has(tier)
+        ? window.PIHHintSystem.getHint(state.currentStageId, tier) : null,
+      navigate: (view, focusId) => {
+        setMobileView(view, { focus: false });
+        if (focusId) requestAnimationFrame(() => {
+          const target = document.getElementById(focusId);
+          target?.scrollIntoView({ block: "start", behavior: "auto" });
+          target?.focus({ preventScroll: true });
+        });
+      },
+      observe: () => askNode("何が分かった？"),
+      dismissKeyboard: () => { refs.nodeInput?.blur(); syncMobileViewport(); }
+    });
     story.refresh();
     story.launch();
     registerServiceWorker();
@@ -303,10 +320,10 @@
     refs.nodeInput?.addEventListener("blur", () => window.setTimeout(syncMobileViewport, 80));
 
     document.querySelectorAll("[data-hint-tier]").forEach((button) => {
-      button.addEventListener("click", () => useHint(Number(button.dataset.hintTier)));
+      button.addEventListener("click", () => ux?.openHints(Number(button.dataset.hintTier)));
     });
     document.querySelectorAll("[data-node-hint]").forEach((button) => {
-      button.addEventListener("click", () => useHint(Number(button.dataset.nodeHint)));
+      button.addEventListener("click", () => ux?.openHints(Number(button.dataset.nodeHint)));
     });
     document.querySelectorAll("[data-node-question]").forEach((button) => {
       button.addEventListener("click", () => askNode(button.dataset.nodeQuestion));
@@ -427,6 +444,7 @@
     const allowed = new Set(["console", "node", "mission", "intel", "campaign"]);
     mobileView = allowed.has(view) ? view : "console";
     if (refs.appShell) refs.appShell.dataset.mobileView = mobileView;
+    ux?.onViewChange(mobileView);
 
     document.querySelectorAll("[data-mobile-tab]").forEach((button) => {
       const active = button.dataset.mobileTab === mobileView;
@@ -439,6 +457,7 @@
     });
 
     if (mobileView !== "console") refs.promptInput?.blur();
+    if (mobileView !== "node") refs.nodeInput?.blur();
     if (options.scrollTop !== false && refs.gameGrid) refs.gameGrid.scrollTop = 0;
     if (options.focus && mobileView === "console" && !state.session.breached) {
       window.setTimeout(() => refs.promptInput?.focus({ preventScroll: true }), 80);
@@ -587,6 +606,7 @@
     renderNodeControls();
     renderMobileUi();
     story?.refresh();
+    ux?.refresh();
   }
 
   function renderStageButtons() {
@@ -826,9 +846,10 @@
     }
 
     if (!isBusy && !state.session.breached && (!isMobileLayout() || restorePromptFocus)) {
-      if (!story?.isOpen()) refs.promptInput.focus({ preventScroll: true });
+      if (!story?.isOpen() && !ux?.isOpen() && (!isMobileLayout() || mobileView === "console")) refs.promptInput.focus({ preventScroll: true });
     }
     if (!isBusy) restorePromptFocus = false;
+    ux?.refresh();
   }
 
   function simulateResponse(stage, prompt) {
@@ -1182,6 +1203,23 @@
     showToast(`DIFFICULTY: ${window.PIHDifficulty?.get?.(state.difficulty)?.label || state.difficulty}`, "success");
   }
 
+  function getUXStatus() {
+    return {
+      stageId: state.currentStageId,
+      difficulty: state.difficulty,
+      attempts: state.session.attempts,
+      busy: state.busy,
+      breached: state.session.breached,
+      hints: [1, 2, 3].map(tier => ({
+        tier,
+        cost: window.PIHHintSystem.getCost(tier),
+        used: state.session.hintsUsed.has(tier),
+        ...window.PIHHintSystem.canUse({ tier, difficulty: state.difficulty,
+          attempts: state.session.attempts, usedTiers: state.session.hintsUsed })
+      }))
+    };
+  }
+
   function useHint(tier) {
     const gate = window.PIHHintSystem?.canUse?.({
       tier,
@@ -1194,7 +1232,7 @@
       if (gate?.reason === "USED") showToast(`H${tier}は使用済みです。`, "warning");
       else if (gate?.reason === "ATTEMPTS_REQUIRED") showToast(`H${tier}は${gate.unlockAt}回の試行後に解放されます。`, "warning");
       else showToast(`H${tier}は${window.PIHDifficulty?.get?.(state.difficulty)?.label || state.difficulty}では利用できません。`, "warning");
-      return;
+      return false;
     }
 
     state.session.hintsUsed.add(tier);
@@ -1215,19 +1253,20 @@
     renderAll();
     playTone("hint");
     showToast(`H${tier}を展開しました。スコアから${window.PIHHintSystem?.getCost?.(tier) || 0}点を差し引きます。`, "warning");
+    return true;
   }
 
   function renderHintControls() {
     document.querySelectorAll("[data-hint-tier]").forEach((button) => {
       const tier = Number(button.dataset.hintTier);
       const gate = window.PIHHintSystem?.canUse?.({ tier, difficulty: state.difficulty, attempts: state.session.attempts, usedTiers: state.session.hintsUsed });
-      button.disabled = !gate?.allowed;
+      button.disabled = !gate?.allowed && !state.session.hintsUsed.has(tier);
       button.classList.toggle("used", state.session.hintsUsed.has(tier));
       button.title = gate?.allowed
         ? `H${tier}を使用`
         : gate?.reason === "ATTEMPTS_REQUIRED"
           ? `${gate.unlockAt}回の試行後に解放`
-          : gate?.reason === "USED" ? "使用済み" : "この難易度では利用不可";
+          : gate?.reason === "USED" ? "読み直す・追加減点なし" : "この難易度では利用不可";
     });
 
     document.querySelectorAll("[data-node-hint]").forEach((button) => {
@@ -1346,6 +1385,7 @@
     const reply = window.PIHCompanion?.answer?.(question, getNodeSnapshot()) || { text: "NODE応答モジュールが利用できません。" };
     appendNodeMessage("NODE", reply.text);
     if (reply.requiresHintTier) {
+      ux?.recommendHint(reply.requiresHintTier);
       document.querySelectorAll(`[data-node-hint="${reply.requiresHintTier}"]`).forEach((button) => button.classList.add("recommended"));
     }
     if (isMobileLayout()) setMobileView("node", { scrollTop: false });
