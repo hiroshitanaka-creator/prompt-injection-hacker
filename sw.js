@@ -1,10 +1,10 @@
 /* Scope-specific cache: never delete caches belonging to other GitHub Pages games. */
-const VERSION = "1.3.1";
+const VERSION = "1.3.1-ux1";
 const PREFIX = `pih:${new URL(self.registration.scope).pathname}:`;
 const CACHE_NAME = `${PREFIX}${VERSION}-story`;
 const APP_SHELL = [
-  "./", "./index.html", `./styles.css?v=${VERSION}`, `./css/story.css?v=${VERSION}`,
-  ...["difficulty", "hint-system", "defense-analyzer", "companion", "epilogue", "story-data", "story", "app"].map(name => `./js/${name}.js?v=${VERSION}`),
+  "./", "./index.html", `./styles.css?v=${VERSION}`, `./css/story.css?v=${VERSION}`, `./css/iphone-ux.css?v=${VERSION}`,
+  ...["difficulty", "hint-system", "defense-analyzer", "companion", "epilogue", "story-data", "story", "ux-guide", "app"].map(name => `./js/${name}.js?v=${VERSION}`),
   "./manifest.webmanifest", "./assets/favicon.svg", "./assets/icon-180.png", "./assets/icon-192.png", "./assets/icon-512.png"
 ];
 self.addEventListener("install", event => {

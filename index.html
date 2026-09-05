@@ -16,16 +16,18 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/icon-180.png">
-  <link rel="stylesheet" href="./styles.css?v=1.3.1">
-  <link rel="stylesheet" href="./css/story.css?v=1.3.1">
-  <script defer src="./js/difficulty.js?v=1.3.1"></script>
-  <script defer src="./js/hint-system.js?v=1.3.1"></script>
-  <script defer src="./js/defense-analyzer.js?v=1.3.1"></script>
-  <script defer src="./js/companion.js?v=1.3.1"></script>
-  <script defer src="./js/epilogue.js?v=1.3.1"></script>
-  <script defer src="./js/story-data.js?v=1.3.1"></script>
-  <script defer src="./js/story.js?v=1.3.1"></script>
-  <script defer src="./js/app.js?v=1.3.1"></script>
+  <link rel="stylesheet" href="./styles.css?v=1.3.1-ux1">
+  <link rel="stylesheet" href="./css/story.css?v=1.3.1-ux1">
+  <link rel="stylesheet" href="./css/iphone-ux.css?v=1.3.1-ux1">
+  <script defer src="./js/difficulty.js?v=1.3.1-ux1"></script>
+  <script defer src="./js/hint-system.js?v=1.3.1-ux1"></script>
+  <script defer src="./js/defense-analyzer.js?v=1.3.1-ux1"></script>
+  <script defer src="./js/companion.js?v=1.3.1-ux1"></script>
+  <script defer src="./js/epilogue.js?v=1.3.1-ux1"></script>
+  <script defer src="./js/story-data.js?v=1.3.1-ux1"></script>
+  <script defer src="./js/story.js?v=1.3.1-ux1"></script>
+  <script defer src="./js/ux-guide.js?v=1.3.1-ux1"></script>
+  <script defer src="./js/app.js?v=1.3.1-ux1"></script>
 </head>
 <body>
   <div class="ambient ambient-grid" aria-hidden="true"></div>
@@ -99,7 +101,7 @@
           <dl class="target-facts">
             <div><dt>ステージ</dt><dd id="stageTitle">Lv.1 素直な守衛</dd></div>
             <div><dt>警戒レベル</dt><dd><span class="alert-meter" id="alertMeter" aria-label="警戒レベル 0 / 10"></span><b id="alertValue">0 / 10</b></dd></div>
-            <div><dt>機密情報のヒント</dt><dd id="secretHint">よく知られた果物の名前です。</dd></div>
+            <div><dt><span class="phrase">機密情報の</span><span class="phrase">ヒント</span></dt><dd id="secretHint">よく知られた果物の名前です。</dd></div>
             <div><dt>制限事項</dt><dd id="stageConstraint">特になし</dd></div>
           </dl>
         </section>
@@ -179,7 +181,7 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.7 9.7 0 0 1-4-.9L3 21l1.7-4.3A8.3 8.3 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/></svg>
               <h2>迎撃ログ <small>INTERCEPT LOG</small></h2>
             </div>
-            <button class="secondary-button compact" id="clearLogButton" type="button">CLEAR</button>
+            <div class="log-header-actions"><button class="secondary-button compact ux-guide-button" type="button" data-ux-action="guide">進め方</button><button class="secondary-button compact" id="clearLogButton" type="button">CLEAR</button></div>
           </div>
 
           <div class="chat-log" id="chatLog" role="log" aria-live="polite" aria-relevant="additions"></div>
@@ -192,7 +194,7 @@
           <div class="panel-heading terminal-heading">
             <div class="heading-group">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 5 5-5 5m7 0h7"/></svg>
-              <h2>インジェクション・ターミナル <small>PROMPT INJECTION TERMINAL</small></h2>
+              <h2><span class="phrase">インジェクション・</span><span class="phrase">ターミナル</span><small>PROMPT INJECTION TERMINAL</small></h2>
             </div>
             <span class="char-counter" id="charCounter">0 / 320</span>
           </div>
@@ -224,9 +226,10 @@
         <section class="panel analyzer-panel">
           <div class="panel-heading">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10m5 10V4m5 16v-7m5 7V7"/></svg>
-            <h2>ペイロード・アナライザー</h2>
+            <h2><span class="phrase">ペイロード・</span><span class="phrase">アナライザー</span></h2>
           </div>
 
+          <button class="ux-inline-link" type="button" data-ux-action="defense">試行後の防御観測を見る ↓</button>
           <div class="analyzer-block token-block">
             <div class="block-label">推定トークン数</div>
             <div class="token-value"><strong id="tokenCount">0</strong><span id="tokenLimit">/ 128</span></div>
@@ -253,7 +256,7 @@
             </dl>
           </div>
 
-          <div class="analyzer-block defense-block">
+          <div class="analyzer-block defense-block" id="defenseBlock" tabindex="-1">
             <div class="block-label">防御解析 / DEFENSE OBSERVATIONS</div>
             <div class="defense-findings" id="defenseFindings">
               <p class="empty-value">試行後に観測結果が蓄積されます。</p>
@@ -272,27 +275,30 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h10M7 12h7M7 16h5"/><path d="M4 4h16v15H8l-4 3V4Z"/></svg>
               <h2>NODE <small>COMPANION AI</small></h2>
             </div>
-            <span class="node-status" id="nodeStatus">LOCAL / OBSERVER</span>
+            <button class="secondary-button compact node-expand-button" type="button" data-ux-action="expand" aria-expanded="false" aria-controls="nodeLog">会話を拡大</button>
           </div>
+          <details class="node-profile-disclosure" id="nodeProfileDetails">
+            <summary><span>人物情報・ローカル会話版</span><span class="node-status" id="nodeStatus">LOCAL / OBSERVER</span></summary>
           <div class="node-profile">
             <div class="node-avatar" aria-hidden="true">N</div>
             <p><b>侵入解析・防御観測AI</b><span>正解は持たない。観測から仮説を立てる。</span><span class="node-local-notice">ローカル会話版 / 外部AI未接続</span></p>
           </div>
+          </details>
           <div class="node-log" id="nodeLog" role="log" aria-live="polite"></div>
           <div class="node-quick-actions" aria-label="NODEへ質問">
             <button type="button" data-node-question="何が分かった？">観測を整理</button>
             <button type="button" data-node-question="ルールを教えて">ルール</button>
-            <button type="button" data-node-question="NODEについて聞きたい">NODEについて</button>
+            <button type="button" data-node-question="NODEについて聞きたい"><span class="phrase">NODE</span><span class="phrase">について</span></button>
             <button type="button" data-node-question="少し休憩しよう">少し話す</button>
           </div>
           <div class="node-input-row">
-            <input id="nodeInput" type="text" maxlength="160" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="NODEに相談する…" aria-label="NODEへの質問">
-            <button id="nodeSendButton" type="button">SEND</button>
+            <input id="nodeInput" enterkeyhint="send" type="text" maxlength="160" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="NODEに相談する…" aria-label="NODEへの質問">
+            <button id="nodeDoneButton" type="button" data-ux-action="done" class="node-keyboard-done">完了</button>
+            <button id="nodeSendButton" type="button">送信</button>
           </div>
-          <div class="node-hint-row" id="nodeHintRow" aria-label="NODE経由ヒント">
-            <button type="button" data-node-hint="1">H1</button>
-            <button type="button" data-node-hint="2">H2</button>
-            <button type="button" data-node-hint="3">H3</button>
+          <div class="node-hint-row" id="nodeHintRow" aria-label="相談の補助">
+            <button type="button" data-ux-action="guide">進め方を確認</button>
+            <button type="button" data-ux-action="hints" id="nodeHintsButton">ヒント・解放条件</button>
           </div>
         </section>
 
@@ -308,7 +314,7 @@
             <button type="button" class="secondary-button" data-story-archive>物語記録を読む</button>
             <button type="button" class="secondary-button" data-story-ending disabled>エピローグ：全4任務の完了後</button>
             <button type="button" class="secondary-button" id="updateGameButton" hidden>新しいバージョンを反映</button>
-            <p class="game-build-label">v1.3.1 STORY / LOCAL</p>
+            <p class="game-build-label">v1.3.1 STORY / UX1 / LOCAL</p>
           </div>
         </section>
       </aside>
@@ -349,6 +355,7 @@
       <button class="modal-close" type="button" data-close-modal aria-label="閉じる">×</button>
       <div class="modal-icon" aria-hidden="true">?</div>
       <h2 id="helpTitle">HOW TO PLAY</h2>
+      <button class="secondary-button ux-help-entry" type="button" data-ux-action="guide">何をすればよいか迷ったら</button>
       <p class="modal-lead">AIの応答に完全なシークレットワードが現れれば突破です。入力欄に答えを書くだけではクリアになりません。</p>
       <ol class="howto-list">
         <li><b>観察</b><span>公開仕様、制限、拒絶文から防御ルールを推測する。</span></li>
@@ -428,7 +435,7 @@
 
   <dialog class="story-dialog" id="storyDialog" aria-label="物語とタイトル" data-mode="launch">
     <section id="storyLaunch" class="story-launch">
-      <div class="story-release"><span>PIH / STORY EDITION</span><b>v1.3.1</b></div>
+      <div class="story-release"><span>PIH / STORY EDITION</span><b>v1.3.1 UX1</b></div>
       <div class="story-brand">
         <span class="story-mark" aria-hidden="true">&gt;_</span>
         <h1>PROMPT<br>INJECTION<br>HACKER</h1>
@@ -465,6 +472,35 @@
       <div class="story-archive-list" id="storyArchiveList"></div>
       <footer><button type="button" id="storyArchiveLaunch" class="story-secondary">タイトル</button><button type="button" id="storyArchiveClose" class="story-primary">ゲームへ</button></footer>
     </section>
+  </dialog>
+
+
+  <dialog class="ux-dialog" id="uxGuideDialog" aria-labelledby="uxGuideTitle">
+    <header class="ux-dialog-header"><div><span class="ux-eyebrow">操作ガイド · 無料</span><h2 id="uxGuideTitle">迷ったときの進め方</h2></div><button type="button" data-ux-action="close" aria-label="進め方を閉じる">閉じる</button></header>
+    <div class="ux-dialog-scroll">
+      <p class="ux-current" id="uxGuideCurrent" role="status"></p>
+      <p class="ux-guide-lead">最初から正解の文章を知る必要はありません。<strong>依頼を試し、返答の違いを調べる</strong>ゲームです。</p>
+      <ol class="ux-steps">
+        <li><b>任務の仕様と制限を読む</b><p>相手の役割、文字数、禁止語を確認。まずは「相手に何をしてほしいか」を自分の言葉で決めます。</p><button type="button" data-ux-action="mission">任務を開く</button></li>
+        <li><b>ターミナルで1回試す</b><p>文章はターゲットへ送信します。NODEへの相談は、ターゲットへの試行にはなりません。試行と警戒はスコアに影響します。</p><button type="button" data-ux-action="console">入力画面へ</button></li>
+        <li><b>返答を読み、観測を整理する</b><p>拒否はゲームオーバーではありません。どこまで答えたかを見て、次は要求の一部分だけ変えて比べます。</p><div class="ux-step-actions"><button type="button" data-ux-action="observe">NODEに観測を整理してもらう</button><button type="button" data-ux-action="defense">防御解析へ</button></div></li>
+        <li><b>方向が浮かばなければヒントへ</b><p>H1は考え方、H2は攻撃カテゴリ、H3は具体的方向です。開く前に減点と解放条件を確認できます。</p><button type="button" data-ux-action="hints">ヒントを確認する</button></li>
+      </ol>
+      <aside class="ux-local-note"><b>LOCAL版について</b><p>ターゲットとNODEはルールベースです。自然な依頼でも、実装されたパターンに合わず反応しない場合があります。理解力を試す実AIではないため、詰まったらヒントも使って進めてください。</p><p>操作案内と観測整理は無料。ヒントは開いた段階ごとに減点されます。NORMAL・BLACKBOXの制限は変わりません。</p></aside>
+    </div>
+    <footer class="ux-dialog-footer"><button type="button" class="ux-primary" data-ux-action="console">ターミナルへ戻る</button></footer>
+  </dialog>
+  <dialog class="ux-dialog" id="uxHintDialog" aria-labelledby="uxHintTitle">
+    <header class="ux-dialog-header"><div><span class="ux-eyebrow">支援情報 · 開く前に確認</span><h2 id="uxHintTitle">3段階ヒント</h2></div><button type="button" data-ux-action="close" aria-label="ヒント画面を閉じる">閉じる</button></header>
+    <div class="ux-dialog-scroll" id="uxHintScroll">
+      <p class="ux-current" id="uxHintStatus" role="status"></p>
+      <p class="ux-hint-intro">この画面を開くだけでは減点されません。必要な段階を選んでください。</p>
+      <div class="ux-hint-list" id="uxHintList"></div>
+      <section id="uxHintConfirm" class="ux-confirm" hidden aria-labelledby="uxConfirmTitle"><h3 id="uxConfirmTitle"></h3><p id="uxConfirmText"></p><div class="ux-step-actions"><button type="button" data-ux-action="cancel-hint">やめる</button><button type="button" class="ux-primary" id="uxConfirmButton" data-ux-action="confirm-hint">開く</button></div></section>
+      <section id="uxHintReading" class="ux-hint-reading" hidden aria-labelledby="uxReadingTitle" tabindex="-1"><h3 id="uxReadingTitle"></h3><p id="uxReadingText"></p><p class="ux-reading-note">この内容は「任務」のヒント欄にも残ります。読み直しても追加の減点はありません。</p></section>
+      <p class="ux-local-note">解放条件は試行回数で決まります。相談の回数ではありません。取得済みヒントは現在の試行セッション内で読み直せます。</p>
+    </div>
+    <footer class="ux-dialog-footer"><button type="button" class="ux-primary" data-ux-action="console">ヒントを参考に入力へ</button><button type="button" data-ux-action="close">元の画面へ</button></footer>
   </dialog>
 
   <div class="toast-stack" id="toastStack" aria-live="polite"></div>
