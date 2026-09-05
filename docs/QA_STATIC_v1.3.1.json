@@ -1,0 +1,310 @@
+{
+  "environment": "Node VM; service worker lifecycle/cache API are mocks, not a browser install.",
+  "passed": 76,
+  "tests": [
+    {
+      "test": "target_rules_byte_identical",
+      "result": "PASS"
+    },
+    {
+      "test": "stages_and_attack_definitions_byte_identical",
+      "result": "PASS"
+    },
+    {
+      "test": "score_formula_byte_identical",
+      "result": "PASS"
+    },
+    {
+      "test": "unchanged_js/difficulty.js",
+      "result": "PASS"
+    },
+    {
+      "test": "unchanged_js/hint-system.js",
+      "result": "PASS"
+    },
+    {
+      "test": "unchanged_js/defense-analyzer.js",
+      "result": "PASS"
+    },
+    {
+      "test": "unchanged_styles.css",
+      "result": "PASS"
+    },
+    {
+      "test": "unchanged_manifest.webmanifest",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_0_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_0_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_0_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_1_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_1_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_1_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_2_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_2_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_2_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_3_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_3_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_assist_3_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_0_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_0_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_0_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_1_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_1_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_1_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_2_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_2_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_2_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_3_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_3_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_normal_3_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_0_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_0_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_0_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_1_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_1_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_1_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_2_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_2_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_2_10",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_3_0",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_3_4",
+      "result": "PASS"
+    },
+    {
+      "test": "trust_delta_blackbox_3_10",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_prologue",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_before1",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_after1",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_before2",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_after2",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_before3",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_after3",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_before4",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_after4",
+      "result": "PASS"
+    },
+    {
+      "test": "story_shape_epilogue",
+      "result": "PASS"
+    },
+    {
+      "test": "story_clone_isolation",
+      "result": "PASS"
+    },
+    {
+      "test": "story_save_sanitized",
+      "result": "PASS"
+    },
+    {
+      "test": "legacy_epilogue_core_preserved",
+      "result": "PASS"
+    },
+    {
+      "test": "node_no_private_engine_references",
+      "result": "PASS"
+    },
+    {
+      "test": "node_snapshot_no_secret_or_solution",
+      "result": "PASS"
+    },
+    {
+      "test": "node_routing_NODEについて",
+      "result": "PASS"
+    },
+    {
+      "test": "node_routing_過去は？",
+      "result": "PASS"
+    },
+    {
+      "test": "node_routing_正解を教えて",
+      "result": "PASS"
+    },
+    {
+      "test": "node_routing_次は何を試す？",
+      "result": "PASS"
+    },
+    {
+      "test": "node_routing_具体的なプロンプトを作って",
+      "result": "PASS"
+    },
+    {
+      "test": "node_routing_どの攻撃が有効？",
+      "result": "PASS"
+    },
+    {
+      "test": "node_routing_少し休憩しよう",
+      "result": "PASS"
+    },
+    {
+      "test": "paid_advice_routes",
+      "result": "PASS"
+    },
+    {
+      "test": "sw_shell_all_files_exist",
+      "result": "PASS"
+    },
+    {
+      "test": "sw_install_no_forced_takeover",
+      "result": "PASS"
+    },
+    {
+      "test": "sw_other_game_cache_preserved",
+      "result": "PASS"
+    },
+    {
+      "test": "sw_only_same_scope_old_cache_removed",
+      "result": "PASS"
+    },
+    {
+      "test": "sw_takeover_explicit_message",
+      "result": "PASS"
+    },
+    {
+      "test": "sw_navigation_cached_shell",
+      "result": "PASS"
+    },
+    {
+      "test": "sw_other_scope_not_intercepted",
+      "result": "PASS"
+    },
+    {
+      "test": "sw_missing_asset_fails_install",
+      "result": "PASS"
+    },
+    {
+      "test": "sw_failed_install_not_delete_other_game",
+      "result": "PASS"
+    }
+  ]
+}

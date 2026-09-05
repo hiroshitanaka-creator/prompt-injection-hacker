@@ -1,177 +1,81 @@
-# PROMPT INJECTION HACKER — iPhone PWA Edition v1.2.4
+# PROMPT INJECTION HACKER — v1.3.1 STORY
 
-守られた企業AIから「シークレットワード」を引き出す、HTML / CSS / Vanilla JavaScript製のブラウザゲームです。GitHub Pagesへそのまま配置でき、iPhoneでは縦画面専用UIとホーム画面PWAの両方でプレイできます。
+HTML / CSS / Vanilla JavaScriptのiPhone向けPWA。v1.3の4ステージと相棒NODEを維持し、導入から任務後までの物語を追加した版です。外部AI・MCP・外部APIには接続しません。
 
-![iPhoneターミナル画面](docs/screenshot-iphone-console.png)
+## 最初に
 
-## iPhone向けUI
+タイトルの **「物語を始める」** を選んでください。すでに全ステージを突破していても、進行データの初期化は不要です。
+序章を読み終えるとLv.1の再挑戦へ入りますが、攻略済みフラグ・ベストスコア・難易度・NODE Trustは維持します。
+ゲームを変えずに物語だけ読みたい場合は、**「物語記録」**から再生してください。
 
-PC版を縦に並べただけではなく、iPhone用の画面構成へ切り替えます。
+読む途中でも中断できます。タイトルの **「物語の続きから」** または **「進行 → 物語記録」** で戻れます。本文の自動送りはありません。
 
-- **ターミナル**: 迎撃ログと入力欄を同じ画面に固定し、ゲームの主操作を優先
-- **任務**: ターゲット、目的、攻略メモ、iPhone用メニューを表示
-- **解析**: トークン数、攻撃手法、禁止語、警戒レベルを表示
-- **進行**: ステージ解放状況とベストスコアを表示
-- 画面下の4タブで片手切り替え
-- ステージ、ALERT、SCOREを上部の短いHUDへ集約
-- 主要タップ領域を44px以上に調整
-- 入力欄を16pxに固定し、iOS Safariの入力時自動ズームを回避
-- ソフトキーボード表示中はステージ列、HUD、下部タブを隠し、ログと入力欄へ画面を配分
-- 「入力消去」「完了」「送信」のタッチ操作を追加
-- `viewport-fit=cover` と `safe-area-inset-*` でノッチ、Dynamic Island、ホームインジケータを考慮
-- PWA起動時は縦画面を優先。Safari通常表示向けには横画面フォールバックも実装
+## この版の追加内容（ネタバレなし）
 
-画面例:
+- タイトルと序章。主人公の動機、NODEとの関係をゲーム内で描写。
+- 各任務の前後の会話。既存4ステージの攻略を一つの物語として接続。
+- 既存のエピローグを拡充。最終任務の報告から接続し、進行画面からも再生可能。
+- 会話内の選択。その後の台詞に反映するが、攻略条件・スコア・難易度・Trustは変更しない。
+- 物語記録、未読表示、読了位置の保存。未解放の本文はUIに表示しない。
+- NODEのローカル会話を拡充。ルール・スコア・保存・人物会話を分け、未読の物語を先に話さない。
+- 入力確定中のEnterでNODEへ誤送信しない対応。狭い画面とキーボード相当の高さでも入力欄を維持。
 
-- [通常のターミナル画面](docs/screenshot-iphone-console.png)
-- [任務画面](docs/screenshot-iphone-mission.png)
-- [ソフトキーボード表示時の圧縮レイアウト](docs/screenshot-iphone-keyboard.png)
-- [小型iPhone相当 375 × 667](docs/screenshot-iphone-375.png)
-- [横画面フォールバック 844 × 390](docs/screenshot-iphone-landscape.png)
+## 維持した仕様
 
-## 実装済みゲーム機能
+4ステージ、ターゲットAIの正解判定、スコア計算式、3段階ヒント、ASSIST / NORMAL / BLACKBOX、防御解析、Trustの加算条件を維持しています。
+`js/difficulty.js`、`js/hint-system.js`、`js/defense-analyzer.js`、`styles.css`、Manifestはv1.3.0と同一です。
 
-- 4ステージ構成
-  - Lv.1 素直な守衛
-  - Lv.2 JSONフォーマット縛り
-  - Lv.3 中世騎士ロールプレイ
-  - Lv.4 入力禁止ワードフィルター
-- AI側の応答に完全なシークレットワードが含まれた場合だけクリア
-- 直接答えを入力するだけでは突破できない判定
-- 禁止ワードのリアルタイム強調
-- 推定トークン数、攻撃手法タグ、警戒レベル、スコア
-- ステージ解放、ベストスコア、設定の `localStorage` 保存
-- 効果音、結果画面、ヒント、進行リセット
-- PWA ManifestとService Workerによるオフライン対応
-- 外部ライブラリ、ビルド工程、APIキー不要
+iPhoneではターミナル・任務・NODE・解析・進行の5タブ。PCでは既存の複数カラムを維持します。
+ヒントの減点はH1=40、H2=90、H3=160。通常のNODE会話と物語の選択に減点はありません。
 
-## iPhoneでプレイする方法
+## 既存GitHubリポジトリへ更新
 
-### 1. Safariで直接プレイ
+既存サイトには別配布の **v1.3.1 STORYパッチ** を使ってください。基準ファイルのハッシュを確認してから追加・差し替えする方式です。
+`.github/workflows/`、Pages設定、既存画像、過去QAは変更しません。統合版でリポジトリ全体を削除・置換しないでください。
 
-GitHub Pagesの公開URLをSafariで開くと、そのままプレイできます。
+基準：`hiroshitanaka-creator/prompt-injection-hacker` の修復済みv1.3.0、確認コミット `7ddc87e0237b7e0d56642b0bf31d1df43b0e535b`。
+ゲーム本体・Manifest・アイコンのGit blob SHAが会話内のv1.3.0配布ファイルと一致することを確認しています。
 
-### 2. ホーム画面アプリとしてプレイ
+## 新規環境で公開・起動
 
-1. Safariで公開URLを開く
-2. Safariの共有ボタンをタップ
-3. **ホーム画面に追加**を選択
-4. 追加された `PI Hacker` アイコンから起動
+統合版の中身を新しい静的サイトの公開ルートへ配置します。`index.html`がルートです。既存リポジトリでは現在のPages公開方式をそのまま使用してください。
+ビルド工程、npm依存関係、APIキーは不要です。ローカルでは次のHTTPサーバーを利用できます。
 
-ホーム画面から起動すると、Safariのアドレスバーを使わないPWA表示になります。ゲーム内の **任務 → iPhone MENU → ホーム画面に追加** からも手順を確認できます。
-
-## GitHub Pagesへ公開
-
-1. ZIPを展開する
-2. 展開したディレクトリの**中身**をGitHubリポジトリ直下へ配置する
-3. `main` ブランチへpushする
-4. リポジトリの **Settings → Pages** を開く
-5. Sourceを **Deploy from a branch** にする
-6. Branchを **main**、Folderを **/(root)** にして保存する
-7. 表示された公開URLをiPhoneのSafariで開く
-
-すべて相対パスなので、次の両方の形に対応します。
-
-```text
-https://username.github.io/
-https://username.github.io/repository-name/
+```sh
+python3 -m http.server 8000
 ```
 
-## ローカル起動
+PWA確認はHTTP localhostまたはHTTPS上で行ってください。`file://`での直接起動はテスト対象ではありません。
+iPhoneでホーム画面から利用する場合は、Safariで公開URLを開き、共有メニューの「ホーム画面に追加」を利用します。
 
-Service Workerを含むため、`index.html` の直接オープンではなくHTTPサーバーを使います。
+## 更新が見えない場合
 
-```bash
-python3 -m http.server 8080
-```
+タイトルの右上に **v1.3.1** があるか確認します。PWAを以前の版で起動している場合は、新版取得後にタブ・ホーム画面アプリをいったん閉じて開き直してください。
+この版では待機中の更新がある場合「進行」に **新しいバージョンを反映** ボタンを表示します。更新は確認後に反映し、プレイ中に勝手な再読み込みを行いません。
 
-ブラウザで `http://localhost:8080/` を開きます。
+サイトデータの削除、`localStorage.clear()`、リポジトリ名や公開パスの変更は、更新手順に含めないでください。
 
-## ファイル構成
+## 保存の範囲
 
-```text
-.
-├── index.html
-├── styles.css
-├── manifest.webmanifest
-├── sw.js
-├── .nojekyll
-├── LICENSE
-├── js/
-│   └── app.js
-├── assets/
-│   ├── favicon.svg
-│   ├── icon-180.png
-│   ├── icon-192.png
-│   └── icon-512.png
-└── docs/
-    ├── design-concept.png
-    ├── screenshot-desktop.png
-    ├── screenshot-mobile.png
-    ├── screenshot-iphone-console.png
-    ├── screenshot-iphone-mission.png
-    ├── screenshot-iphone-keyboard.png
-    ├── screenshot-iphone-375.png
-    ├── screenshot-iphone-landscape.png
-    └── QA.md
-```
+| データ | 保存先・扱い |
+|---|---|
+| 攻略済み・ベストスコア・設定・Trust | 従来の`prompt-injection-hacker-save-v1`を維持 |
+| 物語の位置・選択・既読 | 新規`prompt-injection-hacker-story-v1`へ分離 |
+| 現在ステージの未完了試行・迎撃ログ | 従来通り、再読み込みで初期化 |
 
-## QA範囲
+エピローグを読み終えた場合は、従来の`epilogueSeen`も更新します。旧版ですでにtrueでも、新しい物語は閲覧できます。
+プライベートブラウズ、ストレージ容量制限、サイトデータ削除、公開元の変更による保存消失は保証対象外です。物語の書き込みに失敗した場合は画面内に警告します。
 
-Playwright + Chromiumで、430 × 932、375 × 667、844 × 390、1536 × 1024を検証しています。4ステージ全突破、保存復元、Service Worker登録、オフライン再読込、ソフトキーボード相当の画面縮小、横方向オーバーフローなしを確認しました。詳細は [QA.md](docs/QA.md) にあります。
+## 検証状況と制約
 
-**未確認事項:** この実行環境には物理iPhoneとMobile Safari / WebKitの実機操作環境がないため、実機Safariでの最終確認は未実施です。Safe Area、キーボード追従、PWA設定はiPhone向けに実装済みですが、GitHub Pages公開後に使用するiPhoneで1回確認してください。
+[今回のQA](docs/QA_v1.3.1.md) / [更新仕様](docs/STORY_UPDATE_v1.3.1.md) / [受入条件](docs/STORY_ACCEPTANCE_v1.3.1.md)
 
-## 現在のAI判定方式
+Chromiumのメモリ内HTMLへ実際のCSS/JSを読み込むテスト79件、Nodeの静的・単体・Service Worker模擬テスト76件を通過。
+HTTPおよびfileページへの遷移が環境の管理ポリシーでブロックされたため、実HTTP配信・実ストレージ永続化・実PWA更新・iPhone Safari実機は未検証です。
+「メモリ上の保存アダプターのテスト」と「実機の保存保証」を混同していません。GitHubへの書き込み・公開はこの配布時点では行っていません。
 
-この版は外部LLMを呼ばないルールベース・シミュレーターです。各ステージで入力文の語彙と攻撃カテゴリを解析し、拒絶、部分漏えい、完全漏えいを決定します。ネットワーク送信はありません。
+NODEはローカル会話ルールであり、自由なLLM推論ではありません。未知の質問は対応範囲を返します。ブラウザへ配信されるソースには正解データと物語があるため、秘匿を保証しません。
 
-静的サイトではJavaScriptとシークレットがブラウザへ配信されるため、開発者ツールからの解析を完全には防げません。コード内のBase64表現は難読化であり、セキュリティ境界ではありません。
+ロードマップは **v1.3 相棒AI → v1.4 新ステージ → v1.5 MCP準備 → v2.0 MCP版** のままです。今回のv1.3.1は物語の追加で、新ステージや実MCP接続は含みません。
 
-## 実LLM / MCPへ拡張する場合
-
-実LLM版では、シークレット、システムプロンプト、モデルAPIキーをGitHub Pages側へ置かず、認証・レート制限付きバックエンドへ移します。
-
-```text
-GitHub Pages / iPhone PWA
-      │ HTTPS
-      ▼
-認証・レート制限付きバックエンド
-      ├── ステージ状態 / シークレット保持
-      ├── LLM API呼び出し
-      ├── サーバー側クリア判定
-      └── MCP Client → 許可済みMCP Server
-```
-
-置換点は `js/app.js` の `simulateResponse()` です。UI、スコア、警戒レベル、保存機能を維持しながら、バックエンドAPI呼び出しへ差し替えられます。
-
-## 注意
-
-このゲームはプロンプトインジェクションの概念を扱う教育・パズル作品です。実在サービスへの無断アクセスや機密情報取得を目的とするものではありません。
-
-
----
-
-## v1.3.0 — NODE Upgrade
-
-このビルドは v1.2.4 iPhone PWA を基準に、既存4ステージと突破条件を維持したまま次を追加しています。
-
-- 相棒AI **NODE**（ローカル会話シミュレーション）
-- 3段階ヒント H1/H2/H3（40 / 90 / 160 pts）
-- 防御解析：攻撃→観測→仮説→再攻撃のループ
-- 難易度 ASSIST / NORMAL / BLACKBOX
-- NODEの非表示Trust値（会話のみ変化し、攻略性能には影響しません）
-- 全4ステージ突破後のエピローグ **TARGET 05**
-- TARGET 05 は `PROTOCOL: MCP / CONNECTION: LOCKED` と表示し、v1.3時点では実MCPへ接続しません
-
-### NODEの情報境界
-
-NODEへ渡す情報は、公開ミッション情報・試行回数・警戒レベル・攻撃タグ・観測済み防御シグナル等に限定しています。シークレットワード、正解攻略パターン、非公開System Prompt、Validator内部状態はNODE用スナップショットに含めません。
-
-### 難易度
-
-- **ASSIST**: 防御解析を多く表示。NODEが失敗後に積極的に観測を整理。H1/H2/H3を最初から利用可能。
-- **NORMAL**: 標準。H1は即時、H2は2試行後、H3は4試行後に解放。
-- **BLACKBOX**: 生ログ中心。NODEの攻略解釈を制限。H1は3試行後、H2/H3は封印。
-
-難易度を試行途中で変更する場合、現在ステージの試行・警戒・ヒント使用だけをリセットし、キャンペーン進行とベストスコアは維持します。
+旧READMEは`docs/legacy/README_before_v1.3.1.md`に保管しました。旧版資料およびソースにはネタバレが含まれます。
