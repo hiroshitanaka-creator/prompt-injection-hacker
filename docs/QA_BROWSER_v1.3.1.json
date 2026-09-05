@@ -1,0 +1,401 @@
+{
+  "environment": "Chromium / Playwright, in-memory HTML+actual scripts; storage adapter for save tests. Network/file navigation blocked by administrator; this is not HTTP/Safari/real-storage/PWA integration QA.",
+  "tests": [
+    {
+      "test": "fresh_title_not_unannounced_game",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "future_records_locked",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "narrative_choice_required",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "choice_does_not_change_gameplay",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "story_position_restored",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "prologue_leads_to_briefing",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "briefing_leads_to_play",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "direct_request_rejected",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "node_free_conversation_no_penalty",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "node_receives_no_secret_or_solution",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "japanese_ime_enter_not_sent",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_1_original_clear",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_1_result_reachable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_1_debrief_reachable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_1_next_briefing",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_2_original_clear",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_2_result_reachable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_2_debrief_reachable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_2_next_briefing",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_3_original_clear",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_3_result_reachable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_3_debrief_reachable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_3_next_briefing",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_4_original_clear",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_4_result_reachable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "stage_4_debrief_reachable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "ending_auto_follows_last_debrief",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "ending_read_recorded",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "campaign_result_after_ending",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "all_story_scenes_read",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "ending_replay_accessible_from_campaign",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "archive_replay_no_gameplay_change",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "runtime_errors_full_flow",
+      "result": "PASS",
+      "detail": "[]"
+    },
+    {
+      "test": "legacy_save_exactly_preserved",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "legacy_save_can_view_new_ending",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "expanded_ending_not_hidden_by_legacy_flag",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "legacy_existing_score_retained",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "hint1_cost_40_preserved",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "blackbox_hint2_disabled",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "blackbox_hint3_disabled",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_320x568_root_no_overflow",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_320x568_dialog_in_viewport",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_320x568_story_controls_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_320x568_story_text_readable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_320x568_node_send_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_320x568_no_exceptions",
+      "result": "PASS",
+      "detail": "[]"
+    },
+    {
+      "test": "layout_375x667_root_no_overflow",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_375x667_dialog_in_viewport",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_375x667_story_controls_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_375x667_story_text_readable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_375x667_node_send_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "keyboard_like_375_node_send_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_375x667_no_exceptions",
+      "result": "PASS",
+      "detail": "[]"
+    },
+    {
+      "test": "layout_390x844_root_no_overflow",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_390x844_dialog_in_viewport",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_390x844_story_controls_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_390x844_story_text_readable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_390x844_node_send_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "keyboard_like_390_node_send_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_390x844_no_exceptions",
+      "result": "PASS",
+      "detail": "[]"
+    },
+    {
+      "test": "layout_428x926_root_no_overflow",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_428x926_dialog_in_viewport",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_428x926_story_controls_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_428x926_story_text_readable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_428x926_node_send_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "keyboard_like_428_node_send_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_428x926_no_exceptions",
+      "result": "PASS",
+      "detail": "[]"
+    },
+    {
+      "test": "layout_844x390_root_no_overflow",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_844x390_dialog_in_viewport",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_844x390_story_controls_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_844x390_story_text_readable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_844x390_node_send_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_844x390_no_exceptions",
+      "result": "PASS",
+      "detail": "[]"
+    },
+    {
+      "test": "layout_1536x1024_root_no_overflow",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_1536x1024_dialog_in_viewport",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_1536x1024_story_controls_visible",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_1536x1024_story_text_readable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "layout_1536x1024_no_exceptions",
+      "result": "PASS",
+      "detail": "[]"
+    },
+    {
+      "test": "storage_failure_warning_visible",
+      "result": "PASS",
+      "detail": ""
+    }
+  ],
+  "passed": 79
+}

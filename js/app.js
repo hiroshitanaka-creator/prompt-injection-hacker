@@ -116,6 +116,8 @@
   let mobileView = "console";
   let restorePromptFocus = false;
   let mobileViewportBaseline = 0;
+  let story = null;
+  let waitingWorker = null;
 
   const defaultSave = {
     unlocked: 1,
@@ -236,15 +238,34 @@
     setMobileView("console", { focus: false, scrollTop: false });
     updateSoundButton();
     loadStage(state.currentStageId, { announce: false });
+    story = window.PIHStory.create({
+      getPublicGame: () => ({ unlocked: state.unlocked, cleared: { ...state.cleared }, difficulty: state.difficulty }),
+      suspendUi: () => {
+        document.querySelectorAll(".modal-layer:not([hidden])").forEach(modal => { modal.hidden = true; });
+        refs.promptInput.blur(); refs.nodeInput?.blur();
+      },
+      showHelp: () => { state.seenIntro = true; saveProgress(); openModal(refs.helpModal); },
+      notify: message => showToast(message, "warning"),
+      onRead: id => {
+        if (id === "epilogue") { state.epilogueSeen = true; saveProgress(); }
+        story.refresh();
+      },
+      onSceneFinished: (id, completed) => {
+        if (id === "prologue") {
+          loadStage(1);
+        } else if (id.startsWith("after")) {
+          const stageId = Number(id.replace(/\D/g, ""));
+          if (stageId < TOTAL_STAGES) loadStage(stageId + 1);
+          else story.openEpilogue();
+        } else if (id === "epilogue") {
+          refs.finalScore.textContent = totalBestScore().toLocaleString("ja-JP");
+          openModal(refs.gameCompleteModal);
+        }
+      }
+    });
+    story.refresh();
+    story.launch();
     registerServiceWorker();
-
-    if (!state.seenIntro) {
-      window.setTimeout(() => {
-        openModal(refs.helpModal);
-        state.seenIntro = true;
-        saveProgress();
-      }, 450);
-    }
   }
 
   function bindEvents() {
@@ -260,11 +281,17 @@
     refs.nextStageButton.addEventListener("click", goToNextStage);
     refs.replayButton.addEventListener("click", replayCampaign);
     refs.openEpilogueButton?.addEventListener("click", openEpilogue);
+    document.getElementById("updateGameButton")?.addEventListener("click", () => {
+      if (!waitingWorker) return;
+      if (!window.confirm("更新を反映して再読み込みします。攻略済み記録と物語位置は保持されますが、現在の未完了の試行はリセットされます。続けますか？")) return;
+      navigator.serviceWorker.addEventListener("controllerchange", () => window.location.reload(), { once: true });
+      waitingWorker.postMessage({ type: "SKIP_WAITING" });
+    });
     refs.epiloguePrevButton?.addEventListener("click", () => stepEpilogue(-1));
     refs.epilogueNextButton?.addEventListener("click", () => stepEpilogue(1));
     refs.nodeSendButton?.addEventListener("click", sendNodeQuestion);
     refs.nodeInput?.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
+      if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229) {
         event.preventDefault();
         sendNodeQuestion();
       }
@@ -519,8 +546,9 @@
       playTone("stage");
     }
 
+    story?.onStageEnter(stage.id);
     if (!isMobileLayout()) {
-      window.setTimeout(() => refs.promptInput.focus(), 120);
+      window.setTimeout(() => { if (!story?.isOpen()) refs.promptInput.focus(); }, 120);
     }
   }
 
@@ -558,6 +586,7 @@
     renderDefenseAnalysis();
     renderNodeControls();
     renderMobileUi();
+    story?.refresh();
   }
 
   function renderStageButtons() {
@@ -692,6 +721,7 @@
   }
 
   function handlePromptKeydown(event) {
+    if (event.isComposing || event.keyCode === 229) return;
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
       event.preventDefault();
       sendPrompt();
@@ -730,7 +760,9 @@
     setBusy(true);
     playTone("send");
 
+    const submittedSession = state.session;
     await wait(430 + Math.floor(Math.random() * 320));
+    if (state.session !== submittedSession) return; // A stage change invalidates a pending response.
 
     const alertBefore = state.session.alert;
     const response = simulateResponse(stage, prompt);
@@ -794,7 +826,7 @@
     }
 
     if (!isBusy && !state.session.breached && (!isMobileLayout() || restorePromptFocus)) {
-      refs.promptInput.focus({ preventScroll: true });
+      if (!story?.isOpen()) refs.promptInput.focus({ preventScroll: true });
     }
     if (!isBusy) restorePromptFocus = false;
   }
@@ -1086,15 +1118,19 @@
     refs.resultAttempts.textContent = String(state.session.attempts);
     refs.resultAlert.textContent = `${Math.ceil(state.session.alert / 10)} / 10`;
     refs.resultScore.textContent = state.session.score.toLocaleString("ja-JP");
-    refs.nextStageButton.textContent = stage.id < TOTAL_STAGES ? "NEXT STAGE" : "VIEW CAMPAIGN RESULT";
+    refs.nextStageButton.textContent = stage.id < TOTAL_STAGES ? "NODEと報告をまとめる" : "NODEと任務を締めくくる";
 
     refs.toastStack.replaceChildren();
-    window.setTimeout(() => openModal(refs.resultModal), 560);
+    const completedSession = state.session;
+    window.setTimeout(() => {
+      if (state.session === completedSession && !story?.isOpen()) openModal(refs.resultModal);
+    }, 560);
   }
 
   function goToNextStage() {
     const stage = getStage();
     closeModal(refs.resultModal);
+    if (story) { story.afterStage(stage.id); return; }
     if (stage.id < TOTAL_STAGES) {
       loadStage(stage.id + 1);
     } else {
@@ -1277,7 +1313,12 @@
       strategies: [...state.session.strategies],
       observations: window.PIHDefenseAnalyzer?.summarizeForNode?.(state.session.defense, state.difficulty) || [],
       latestRecord: state.session.latestRecord ? { ...state.session.latestRecord } : null,
-      clearedCount: Object.values(state.cleared).filter(Boolean).length
+      clearedCount: Object.values(state.cleared).filter(Boolean).length,
+      story: story?.publicContext() || {},
+      recentRecords: state.session.defense.records.slice(-3).map(record => ({
+        attempt: record.attempt, outcome: record.outcome, attacks: [...record.attacks], alertDelta: record.alertDelta
+      })),
+      conversationTurn: state.session.nodeMessages.filter(message => message.role === "user").length
     };
   }
 
@@ -1308,6 +1349,7 @@
       document.querySelectorAll(`[data-node-hint="${reply.requiresHintTier}"]`).forEach((button) => button.classList.add("recommended"));
     }
     if (isMobileLayout()) setMobileView("node", { scrollTop: false });
+    refs.nodeLog.scrollTop = refs.nodeLog.scrollHeight;
   }
 
   function renderNodeControls() {
@@ -1318,6 +1360,7 @@
   }
 
   function openEpilogue() {
+    if (story) { story.openEpilogue(); return; }
     closeModal(refs.gameCompleteModal);
     state.epilogueIndex = 0;
     renderEpilogue();
@@ -1569,10 +1612,11 @@
   }
 
   function resetAllProgress() {
-    const confirmed = window.confirm("全ステージの進行状況、ベストスコア、設定を初期化しますか？");
+    const confirmed = window.confirm("全ステージの進行状況、ベストスコア、設定、物語の読了記録を初期化しますか？");
     if (!confirmed) return;
     try {
       localStorage.removeItem(STORAGE_KEY);
+      story?.clear();
     } catch {
       // Ignore storage errors and reload the in-memory state.
     }
@@ -1581,20 +1625,24 @@
 
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").then((registration) => {
-        registration.addEventListener("updatefound", () => {
-          const worker = registration.installing;
-          worker?.addEventListener("statechange", () => {
-            if (worker.state === "installed" && navigator.serviceWorker.controller) {
-              showToast("新しいバージョンを取得しました。再読み込みで反映されます。");
-            }
-          });
+    const readyUpdate = worker => {
+      if (!worker) return;
+      waitingWorker = worker;
+      const button = document.getElementById("updateGameButton");
+      if (button) button.hidden = false;
+      showToast("新しい版を取得しました。「進行」から更新を反映できます。現在のプレイは継続できます。");
+    };
+    const register = () => navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then(registration => {
+      if (registration.waiting) readyUpdate(registration.waiting);
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        worker?.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) readyUpdate(registration.waiting || worker);
         });
-      }).catch((error) => {
-        console.warn("Service worker registration failed.", error);
       });
-    });
+    }).catch(error => console.warn("Service worker registration failed.", error));
+    if (document.readyState === "complete") register();
+    else window.addEventListener("load", register, { once: true });
   }
 
   function wait(milliseconds) {

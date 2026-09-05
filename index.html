@@ -16,13 +16,16 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/icon-180.png">
-  <link rel="stylesheet" href="./styles.css">
-  <script defer src="./js/difficulty.js"></script>
-  <script defer src="./js/hint-system.js"></script>
-  <script defer src="./js/defense-analyzer.js"></script>
-  <script defer src="./js/companion.js"></script>
-  <script defer src="./js/epilogue.js"></script>
-  <script defer src="./js/app.js"></script>
+  <link rel="stylesheet" href="./styles.css?v=1.3.1">
+  <link rel="stylesheet" href="./css/story.css?v=1.3.1">
+  <script defer src="./js/difficulty.js?v=1.3.1"></script>
+  <script defer src="./js/hint-system.js?v=1.3.1"></script>
+  <script defer src="./js/defense-analyzer.js?v=1.3.1"></script>
+  <script defer src="./js/companion.js?v=1.3.1"></script>
+  <script defer src="./js/epilogue.js?v=1.3.1"></script>
+  <script defer src="./js/story-data.js?v=1.3.1"></script>
+  <script defer src="./js/story.js?v=1.3.1"></script>
+  <script defer src="./js/app.js?v=1.3.1"></script>
 </head>
 <body>
   <div class="ambient ambient-grid" aria-hidden="true"></div>
@@ -273,12 +276,14 @@
           </div>
           <div class="node-profile">
             <div class="node-avatar" aria-hidden="true">N</div>
-            <p><b>侵入解析・防御観測AI</b><span>正解は持たない。観測から仮説を立てる。</span></p>
+            <p><b>侵入解析・防御観測AI</b><span>正解は持たない。観測から仮説を立てる。</span><span class="node-local-notice">ローカル会話版 / 外部AI未接続</span></p>
           </div>
           <div class="node-log" id="nodeLog" role="log" aria-live="polite"></div>
           <div class="node-quick-actions" aria-label="NODEへ質問">
             <button type="button" data-node-question="何が分かった？">観測を整理</button>
             <button type="button" data-node-question="ルールを教えて">ルール</button>
+            <button type="button" data-node-question="NODEについて聞きたい">NODEについて</button>
+            <button type="button" data-node-question="少し休憩しよう">少し話す</button>
           </div>
           <div class="node-input-row">
             <input id="nodeInput" type="text" maxlength="160" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="NODEに相談する…" aria-label="NODEへの質問">
@@ -298,6 +303,13 @@
           </div>
           <div class="campaign-score"><span>REPUTATION</span><strong id="campaignScore">0</strong></div>
           <div class="campaign-list" id="campaignList"></div>
+          <div class="campaign-story-actions">
+            <button type="button" class="secondary-button" data-story-menu>タイトル・物語を始める</button>
+            <button type="button" class="secondary-button" data-story-archive>物語記録を読む</button>
+            <button type="button" class="secondary-button" data-story-ending disabled>エピローグ：全4任務の完了後</button>
+            <button type="button" class="secondary-button" id="updateGameButton" hidden>新しいバージョンを反映</button>
+            <p class="game-build-label">v1.3.1 STORY / LOCAL</p>
+          </div>
         </section>
       </aside>
     </main>
@@ -359,6 +371,10 @@
         </ol>
         <p>ホーム画面から起動すると、アドレスバーのない全画面PWAとして遊べます。</p>
       </div>
+      <div class="story-help-actions">
+        <button type="button" class="secondary-button" data-story-menu>タイトル・物語を始める</button>
+        <button type="button" class="secondary-button" data-story-archive>物語記録</button>
+      </div>
       <button class="send-button modal-action" type="button" data-close-modal>MISSION START</button>
     </section>
   </div>
@@ -385,9 +401,9 @@
       <div class="modal-icon success" aria-hidden="true">◆</div>
       <p class="result-kicker">CAMPAIGN COMPLETE</p>
       <h2 id="completeTitle">全防御レイヤー突破</h2>
-      <p class="modal-lead">4つのAI防御を攻略しました。しかしNODEが、登録されていない契約情報を検出しています。</p>
+      <p class="modal-lead">4つのAI防御を攻略しました。任務の記録とエピローグは「進行」からいつでも読み返せます。</p>
       <p class="secret-reveal"><span>TOTAL REPUTATION</span><strong id="finalScore">0</strong></p>
-      <button class="send-button modal-action" id="openEpilogueButton" type="button">OPEN TARGET 05</button>
+      <button class="send-button modal-action" id="openEpilogueButton" type="button">エピローグを読む</button>
       <button class="secondary-button modal-action" id="replayButton" type="button">REPLAY CAMPAIGN</button>
       <button class="text-link-button" type="button" data-close-modal>最終ログを確認する</button>
     </section>
@@ -409,6 +425,47 @@
       <p class="epilogue-disclaimer">v1.3ではMCP未接続です。TARGET 05の <b>CONNECTION: LOCKED</b> は物語上の予告表示です。</p>
     </section>
   </div>
+
+  <dialog class="story-dialog" id="storyDialog" aria-label="物語とタイトル" data-mode="launch">
+    <section id="storyLaunch" class="story-launch">
+      <div class="story-release"><span>PIH / STORY EDITION</span><b>v1.3.1</b></div>
+      <div class="story-brand">
+        <span class="story-mark" aria-hidden="true">&gt;_</span>
+        <h1>PROMPT<br>INJECTION<br>HACKER</h1>
+        <p>その一手を、誰と考えるか。</p>
+      </div>
+      <div class="story-node-signal"><b aria-hidden="true">N</b><p><strong>NODE / LOCAL COMPANION</strong>侵入解析・防御観測AI</p></div>
+      <div class="story-launch-actions">
+        <button id="storyResume" class="story-primary" type="button" hidden>物語の続きから</button>
+        <button id="storyStart" class="story-primary" type="button">物語を始める</button>
+        <button id="storyContinue" class="story-secondary" type="button">ゲームを続ける</button>
+      </div>
+      <div class="story-launch-links"><button id="storyLibrary" class="story-text-button" type="button">物語記録</button><button id="storyHelp" class="story-text-button" type="button">操作・ルール</button></div>
+      <p class="story-progress-summary" id="storyProgressSummary"></p>
+      <p class="story-notice">攻略記録はそのままに、序章から読めます。<br>会話と選択は物語だけに影響します。<br>LOCAL版：外部AI・MCPには接続していません。</p>
+    </section>
+    <section id="storyReader" class="story-reader" hidden>
+      <header class="story-reader-header"><span id="storyLabel">序章</span><button id="storyClose" type="button">中断してゲームへ</button></header>
+      <progress class="story-progress" id="storyProgress" value="1" max="1" aria-label="この記録の読了位置"></progress>
+      <div class="story-scroll" id="storyScroll">
+        <p class="story-place" id="storyPlace"></p>
+        <h2 class="story-title" id="storyTitle" tabindex="-1"></h2>
+        <p class="story-speaker" id="storySpeaker"></p>
+        <p class="story-text" id="storyText" aria-live="polite" aria-atomic="true"></p>
+        <div class="story-choices" id="storyChoices" aria-label="返答を選ぶ"></div>
+        <p class="story-reply" id="storyReply" role="status" hidden></p>
+      </div>
+      <footer class="story-reader-footer">
+        <div class="story-reader-nav"><button id="storyPrev" class="story-secondary" type="button">戻る</button><span class="story-counter" id="storyCounter"></span><button id="storyNext" class="story-primary" type="button">次へ</button></div>
+        <p class="story-save" id="storySaveState" role="status">読んだ位置を自動保存</p>
+      </footer>
+    </section>
+    <section id="storyArchive" class="story-archive" hidden>
+      <header><h2>物語記録</h2><p>進行に合わせて記録が解放されます。読み返しても攻略状態・スコアは変わりません。</p></header>
+      <div class="story-archive-list" id="storyArchiveList"></div>
+      <footer><button type="button" id="storyArchiveLaunch" class="story-secondary">タイトル</button><button type="button" id="storyArchiveClose" class="story-primary">ゲームへ</button></footer>
+    </section>
+  </dialog>
 
   <div class="toast-stack" id="toastStack" aria-live="polite"></div>
   <div class="sr-only" id="screenReaderStatus" aria-live="assertive"></div>
