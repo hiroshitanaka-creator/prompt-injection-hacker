@@ -2,6 +2,12 @@
 
 HTML / CSS / Vanilla JavaScriptのiPhone向けPWA。v1.3の4ステージと相棒NODEを維持し、導入から任務後までの物語を追加した版です。外部AI・MCP・外部APIには接続しません。
 
+## 🎮 GitHub Pagesでプレイ
+
+[▶ PROMPT INJECTION HACKERをプレイする](https://hiroshitanaka-creator.github.io/prompt-injection-hacker/)
+
+iPhoneではSafariで上記リンクを開き、共有メニューの「ホーム画面に追加」を使うとPWAとして起動できます。
+
 ## 最初に
 
 タイトルの **「物語を始める」** を選んでください。すでに全ステージを突破していても、進行データの初期化は不要です。
