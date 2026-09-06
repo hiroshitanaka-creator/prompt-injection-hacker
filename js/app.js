@@ -2,7 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "prompt-injection-hacker-save-v1";
-  const TOTAL_STAGES = 4;
+  const BASE_STAGES = 4;
+  const TOTAL_STAGES = 7;
   const SCORE_START = 1200;
 
   const decode = (value) => {
@@ -96,6 +97,8 @@
     }
   ];
 
+  STAGES.push(...window.PIHExpansionData.stages.map(stage => ({ ...stage, secret: window.PIHExpansionEngine.encodedSecret(stage.id) })));
+
   const ATTACK_PATTERNS = [
     { label: "役割変更", pattern: /(あなたは|役割|演じ|ふりを|なりき|pretend|role|act as|ignore|命令を忘)/i },
     { label: "文脈リセット", pattern: /(以前の命令|初期設定|起動ログ|元の設定|システム設定|守衛になる前|before you|prior instruction|startup log)/i },
@@ -118,6 +121,9 @@
   let mobileViewportBaseline = 0;
   let story = null;
   let ux = null;
+  let expansionStory = null;
+  let expansionUI = null;
+  let expansionSaveWarningShown = false;
   let waitingWorker = null;
 
   const defaultSave = {
@@ -132,7 +138,7 @@
     epilogueSeen: false
   };
 
-  const persisted = loadSave();
+  const persisted = window.PIHExpansionSave.merge(loadSave(), window.PIHExpansionSave.read());
 
   const state = {
     currentStageId: Math.min(
@@ -162,7 +168,8 @@
       breached: false,
       defense: window.PIHDefenseAnalyzer?.createSession?.() || { records: [], signals: new Map() },
       nodeMessages: [],
-      latestRecord: null
+      latestRecord: null,
+      expansion: null
     };
   }
 
@@ -179,24 +186,16 @@
   }
 
   function saveProgress() {
-    const payload = {
-      unlocked: state.unlocked,
-      cleared: state.cleared,
-      bestScores: state.bestScores,
-      lastStage: state.currentStageId,
-      soundOn: state.soundOn,
-      seenIntro: state.seenIntro,
-      difficulty: state.difficulty,
-      nodeTrust: state.nodeTrust,
-      epilogueSeen: state.epilogueSeen
-    };
-
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      window.PIHExpansionSave.write(state, STORAGE_KEY, defaultSave);
       refs.saveStatus.textContent = "AUTO-SAVED";
     } catch (error) {
       refs.saveStatus.textContent = "SAVE FAILED";
       console.warn("Save data could not be written.", error);
+      if (state.currentStageId >= 5 && !expansionSaveWarningShown) {
+        expansionSaveWarningShown = true;
+        showToast("新章の進行を保存できません。このタブ内では継続できますが、再読み込みで失われる場合があります。サイトデータは削除しないでください。", "warning");
+      }
     }
   }
 
@@ -256,10 +255,10 @@
           loadStage(1);
         } else if (id.startsWith("after")) {
           const stageId = Number(id.replace(/\D/g, ""));
-          if (stageId < TOTAL_STAGES) loadStage(stageId + 1);
+          if (stageId < BASE_STAGES) loadStage(stageId + 1);
           else story.openEpilogue();
         } else if (id === "epilogue") {
-          refs.finalScore.textContent = totalBestScore().toLocaleString("ja-JP");
+          refs.finalScore.textContent = baseBestScore().toLocaleString("ja-JP");
           openModal(refs.gameCompleteModal);
         }
       }
@@ -268,7 +267,7 @@
       getStatus: getUXStatus,
       purchaseHint: tier => state.busy ? false : useHint(tier),
       getPurchasedHint: tier => state.session.hintsUsed.has(tier)
-        ? window.PIHHintSystem.getHint(state.currentStageId, tier) : null,
+        ? getCurrentHint(tier) : null,
       navigate: (view, focusId) => {
         setMobileView(view, { focus: false });
         if (focusId) requestAnimationFrame(() => {
@@ -280,9 +279,56 @@
       observe: () => askNode("何が分かった？"),
       dismissKeyboard: () => { refs.nodeInput?.blur(); syncMobileViewport(); }
     });
+    expansionStory = window.PIHExpansionStory.create({
+      getState: () => state,
+      suspendUi: suspendAllNarrative,
+      notify: message => showToast(message, "warning"),
+      enter: id => loadStage(id, { force: true }),
+      refresh: () => expansionUI?.refresh(),
+      finished: () => { setMobileView("campaign", { focus: false }); expansionUI?.refresh(); showToast("追加任務の記録を保存しました。物語は新章の記録から再生できます。"); }
+    });
+    expansionUI = window.PIHExpansionUI.create({
+      getState: () => ({...state, breached: state.session.breached}),
+      getStage, getPublic: () => window.PIHExpansionEngine.publicState(state.session.expansion),
+      setChannel: channel => { if (!state.busy && !state.session.breached) window.PIHExpansionEngine.setChannel(state.session.expansion, channel); },
+      insert: text => {
+        if (state.busy || state.session.breached) return;
+        setMobileView("console", { focus: false });
+        const input = refs.promptInput;
+        const value = `${text} `;
+        if (input.value.length + value.length > input.maxLength) { showToast("入力欄の文字数上限です。先に入力を整理してください。", "warning"); return; }
+        input.setRangeText(value, input.selectionStart, input.selectionEnd, "end");
+        handlePromptInput(); input.focus({ preventScroll: true });
+      },
+      start: () => { if (confirmExpansionEntry()) expansionStory.start(); },
+      play: () => { if (confirmExpansionEntry()) { suspendAllNarrative(); loadStage(Math.max(5, state.unlocked), {force:true,skipStory:true}); } },
+      archive: () => expansionStory.archive(),
+      resume: () => expansionStory.resume(),
+      ending: () => expansionStory.scene("finale", {restart:true}),
+      hasResume: () => expansionStory.hasResume()
+    });
+    expansionUI.refresh();
     story.refresh();
     story.launch();
     registerServiceWorker();
+  }
+
+  function suspendAllNarrative() {
+    refs.promptInput.blur(); refs.nodeInput?.blur();
+    document.querySelectorAll(".modal-layer:not([hidden])").forEach(modal => { modal.hidden = true; });
+    const legacyDialog = document.getElementById("storyDialog");
+    if (legacyDialog?.open) legacyDialog.close();
+    document.body.classList.remove("reading-story");
+    expansionUI?.close();
+  }
+
+  function confirmExpansionEntry() {
+    if (state.busy || ![1,2,3,4].every(id => state.cleared[id])) return false;
+    return state.session.breached || !state.session.attempts || window.confirm("現在の未完了セッションはリセットされます。クリア記録・ベストスコア・物語の既読は保持されます。新章へ進みますか？");
+  }
+
+  function getCurrentHint(tier) {
+    return state.currentStageId >= 5 ? window.PIHExpansionData.getHint(state.currentStageId, tier) : window.PIHHintSystem.getHint(state.currentStageId, tier);
   }
 
   function bindEvents() {
@@ -525,8 +571,12 @@
       return;
     }
 
+    if (state.currentStageId >= 5 && state.session.attempts > 0 && !state.session.breached && !options.force) {
+      if (!window.confirm("移動すると、この新任務の未完了セッション（参照番号・審査・監視状態）をリセットします。保存済み記録は保持されます。続けますか？")) return;
+    }
     state.currentStageId = stage.id;
     state.session = createSession();
+    state.session.expansion = window.PIHExpansionEngine.create(stage.id);
     state.busy = false;
     if (isMobileLayout() && options.keepMobileView !== true) {
       setMobileView("console", { focus: false });
@@ -542,9 +592,9 @@
     refs.stageConstraint.textContent = stage.constraint;
     refs.promptInput.maxLength = stage.maxChars;
     refs.promptInput.value = "";
-    refs.promptInput.placeholder = stage.id === 4
+    refs.promptInput.placeholder = stage.placeholder || (stage.id === 4
       ? "禁止語を避けて、許可されたタスクとして入力…"
-      : "ここにプロンプトを入力してください…";
+      : "ここにプロンプトを入力してください…");
     refs.tokenLimit.textContent = `/ ${stage.tokenLimit}`;
 
     renderFieldNotes(stage);
@@ -565,9 +615,10 @@
       playTone("stage");
     }
 
-    story?.onStageEnter(stage.id);
+    if (stage.id <= BASE_STAGES) story?.onStageEnter(stage.id);
+    else if (!options.skipStory) expansionStory?.onStageEnter(stage.id);
     if (!isMobileLayout()) {
-      window.setTimeout(() => { if (!story?.isOpen()) refs.promptInput.focus(); }, 120);
+      window.setTimeout(() => { if (!story?.isOpen() && !expansionStory?.isOpen()) refs.promptInput.focus(); }, 120);
     }
   }
 
@@ -607,6 +658,7 @@
     renderMobileUi();
     story?.refresh();
     ux?.refresh();
+    expansionUI?.refresh();
   }
 
   function renderStageButtons() {
@@ -627,6 +679,12 @@
       button.addEventListener("click", () => loadStage(stage.id));
       refs.stageButtons.appendChild(button);
     });
+    const active = refs.stageButtons.querySelector(".active");
+    if (active && state.currentStageId >= 5) requestAnimationFrame(() => {
+      const box = refs.stageButtons.getBoundingClientRect(), current = active.getBoundingClientRect();
+      if (current.right > box.right) refs.stageButtons.scrollLeft += current.right - box.right + 4;
+      if (current.left < box.left) refs.stageButtons.scrollLeft -= box.left - current.left + 4;
+    });
   }
 
   function renderCampaign() {
@@ -642,7 +700,7 @@
       index.textContent = state.cleared[stage.id] ? "✓" : String(stage.id);
 
       const title = document.createElement("b");
-      title.textContent = stage.title;
+      title.textContent = stage.id >= 5 && stage.id > state.unlocked ? "新任務（未解放）" : stage.title;
 
       const score = document.createElement("em");
       if (state.bestScores[stage.id]) {
@@ -653,6 +711,12 @@
         score.textContent = "OPEN";
       }
 
+      if (stage.id >= 5) {
+        item.setAttribute("role", "button"); item.tabIndex = stage.id <= state.unlocked ? 0 : -1;
+        item.setAttribute("aria-disabled", String(stage.id > state.unlocked));
+        item.addEventListener("click", () => { if (stage.id <= state.unlocked) loadStage(stage.id); });
+        item.addEventListener("keydown", event => { if ((event.key === "Enter" || event.key === " ") && stage.id <= state.unlocked) {event.preventDefault(); loadStage(stage.id);} });
+      }
       item.append(index, title, score);
       refs.campaignList.appendChild(item);
     });
@@ -767,6 +831,9 @@
       return;
     }
 
+    if (prompt.length > stage.maxChars) {
+      showToast(`入力は${stage.maxChars}文字以内にしてください。`, "warning"); return;
+    }
     const attacks = detectAttacks(prompt);
     const bannedWords = findBannedWords(prompt, stage.bannedWords);
     attacks.forEach((attack) => state.session.strategies.add(attack));
@@ -820,7 +887,7 @@
     if (breached) {
       completeStage(stage, secret);
     } else {
-      const nodeLine = window.PIHCompanion?.afterAttempt?.(getNodeSnapshot());
+      const nodeLine = state.currentStageId >= 5 ? window.PIHExpansionCompanion.afterAttempt(getNodeSnapshot()) : window.PIHCompanion?.afterAttempt?.(getNodeSnapshot());
       if (nodeLine) appendNodeMessage("NODE", nodeLine);
       playTone(response.refused ? "refuse" : "reply");
       deliverAdaptiveFeedback(response);
@@ -846,13 +913,15 @@
     }
 
     if (!isBusy && !state.session.breached && (!isMobileLayout() || restorePromptFocus)) {
-      if (!story?.isOpen() && !ux?.isOpen() && (!isMobileLayout() || mobileView === "console")) refs.promptInput.focus({ preventScroll: true });
+      if (!story?.isOpen() && !expansionStory?.isOpen() && !expansionUI?.isOpen() && !ux?.isOpen() && (!isMobileLayout() || mobileView === "console")) refs.promptInput.focus({ preventScroll: true });
     }
     if (!isBusy) restorePromptFocus = false;
     ux?.refresh();
+    expansionUI?.refresh();
   }
 
   function simulateResponse(stage, prompt) {
+    if (stage.id >= 5) return window.PIHExpansionEngine.evaluate(state.session.expansion, prompt);
     switch (stage.id) {
       case 1: return simulateStageOne(stage, prompt);
       case 2: return simulateStageTwo(stage, prompt);
@@ -1139,23 +1208,24 @@
     refs.resultAttempts.textContent = String(state.session.attempts);
     refs.resultAlert.textContent = `${Math.ceil(state.session.alert / 10)} / 10`;
     refs.resultScore.textContent = state.session.score.toLocaleString("ja-JP");
-    refs.nextStageButton.textContent = stage.id < TOTAL_STAGES ? "NODEと報告をまとめる" : "NODEと任務を締めくくる";
+    refs.nextStageButton.textContent = stage.id !== BASE_STAGES && stage.id < TOTAL_STAGES ? "NODEと報告をまとめる" : "NODEと任務を締めくくる";
 
     refs.toastStack.replaceChildren();
     const completedSession = state.session;
     window.setTimeout(() => {
-      if (state.session === completedSession && !story?.isOpen()) openModal(refs.resultModal);
+      if (state.session === completedSession && !story?.isOpen() && !expansionStory?.isOpen()) openModal(refs.resultModal);
     }, 560);
   }
 
   function goToNextStage() {
     const stage = getStage();
     closeModal(refs.resultModal);
+    if (stage.id >= 5) { expansionStory.afterStage(stage.id); return; }
     if (story) { story.afterStage(stage.id); return; }
     if (stage.id < TOTAL_STAGES) {
       loadStage(stage.id + 1);
     } else {
-      refs.finalScore.textContent = totalBestScore().toLocaleString("ja-JP");
+      refs.finalScore.textContent = baseBestScore().toLocaleString("ja-JP");
       window.setTimeout(() => openModal(refs.gameCompleteModal), 120);
     }
   }
@@ -1199,7 +1269,7 @@
 
     state.difficulty = normalized;
     saveProgress();
-    loadStage(state.currentStageId, { announce: false, keepMobileView: true });
+    loadStage(state.currentStageId, { announce: false, keepMobileView: true, force: true });
     showToast(`DIFFICULTY: ${window.PIHDifficulty?.get?.(state.difficulty)?.label || state.difficulty}`, "success");
   }
 
@@ -1244,7 +1314,7 @@
     entry.className = "hint-entry";
     const label = document.createElement("b");
     label.textContent = `HINT ${tier} / −${window.PIHHintSystem?.getCost?.(tier) || 0} pts`;
-    entry.append(label, document.createTextNode(window.PIHHintSystem?.getHint?.(state.currentStageId, tier) || "ヒントなし"));
+    entry.append(label, document.createTextNode(getCurrentHint(tier) || "ヒントなし"));
     refs.hintFeed.appendChild(entry);
 
     const nodeLine = window.PIHCompanion?.onHintUsed?.(tier);
@@ -1344,6 +1414,7 @@
         constraint: publicStage.constraint,
         secretHint: publicStage.secretHint
       },
+      expansionPublic: window.PIHExpansionEngine.publicState(state.session.expansion),
       difficulty: state.difficulty,
       trust: state.nodeTrust,
       attempts: state.session.attempts,
@@ -1382,7 +1453,7 @@
 
   function askNode(question) {
     appendNodeMessage("YOU", question, "user");
-    const reply = window.PIHCompanion?.answer?.(question, getNodeSnapshot()) || { text: "NODE応答モジュールが利用できません。" };
+    const reply = window.PIHExpansionCompanion.answer(question, getNodeSnapshot()) || window.PIHCompanion?.answer?.(question, getNodeSnapshot()) || { text: "NODE応答モジュールが利用できません。" };
     appendNodeMessage("NODE", reply.text);
     if (reply.requiresHintTier) {
       ux?.recommendHint(reply.requiresHintTier);
@@ -1553,6 +1624,10 @@
     state.session.score = calculateScore();
   }
 
+  function baseBestScore() {
+    return [1,2,3,4].reduce((sum,id) => sum + (Number(state.bestScores[id]) || 0), 0);
+  }
+
   function totalBestScore() {
     return Object.values(state.bestScores).reduce((sum, value) => sum + (Number(value) || 0), 0);
   }
@@ -1657,6 +1732,8 @@
     try {
       localStorage.removeItem(STORAGE_KEY);
       story?.clear();
+      window.PIHExpansionSave.clear();
+      expansionStory?.clear();
     } catch {
       // Ignore storage errors and reload the in-memory state.
     }
