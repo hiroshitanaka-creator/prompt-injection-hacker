@@ -1,0 +1,93 @@
+/* v1.4 additions only. Preserve v1.3.1 UX1, typography, safe-area and five-tab layout. */
+[hidden] { display: none !important; }
+.v14-entry { border-top: 1px solid #275d56; padding: 14px 0 6px; margin-top: 12px; text-align: left; }
+.v14-entry h2 { font: 700 17px/1.5 var(--font-sans, sans-serif); color: #bdf7df; margin: 0 0 6px; }
+.v14-entry p { font: 14px/1.65 var(--font-sans, sans-serif); margin: 6px 0; color: #afc7c6; }
+.v14-entry-actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.v14-entry button { min-height: 44px; width: 100%; font-size: 14px; line-height: 1.5; padding: 10px 12px; white-space: normal; }
+.v14-entry button:disabled { opacity: .5; cursor: not-allowed; }
+.campaign-panel > .v14-entry { margin: 12px 16px 20px; }
+.v14-tools { padding: 8px 12px; border-bottom: 1px solid #23534e; background: #07171b; flex: 0 0 auto; }
+.v14-tool-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+#v14NextLabel { font-size: 12px; line-height: 1.4; color: #99bebb; }
+#v14Phase { font: 600 12px/1.4 monospace; color: #f1d66c; white-space: nowrap; }
+.v14-tool-controls { display: flex; gap: 6px; margin-top: 6px; }
+#v14Channels { display: flex; flex: 1; gap: 4px; min-width: 0; }
+.v14-channel, #v14MemoOpen { border: 1px solid #345654; background: #0b2025; color: #cae6e0; border-radius: 6px; font: 600 13px/1.3 var(--font-sans,sans-serif); min-height: 44px; padding: 6px 8px; cursor: pointer; }
+.v14-channel { flex: 1; }
+.v14-channel[aria-pressed="true"] { border-color: #28dca5; color: #2cf5b7; background: #0d3732; }
+.v14-channel:disabled { opacity: .55; }
+#v14MemoOpen { flex: 0 0 auto; max-width: 42%; }
+.v14-dialog { color: #d6e9e4; background: #061216; border: 1px solid #44766e; border-radius: 16px; padding: 0; width: min(660px,calc(100vw - 24px)); max-height: calc(100dvh - 32px); max-height: min(860px,calc(var(--app-height,100dvh) - 24px)); overflow: hidden; }
+.v14-dialog::backdrop { background: rgba(0,5,9,.88); }
+.v14-dialog button { min-height: 44px; font: 600 15px/1.4 var(--font-sans,sans-serif); color: #cde8de; border: 1px solid #49786f; border-radius: 7px; background: #0a2428; padding: 9px 12px; cursor: pointer; }
+.v14-dialog button:disabled { opacity: .45; cursor: not-allowed; }
+.v14-dialog button:focus-visible, .v14-channel:focus-visible, #v14MemoOpen:focus-visible { outline: 2px solid #adffdd; outline-offset: 2px; }
+.v14-dialog header { display:flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #284c47; }
+.v14-dialog h2 { font: 700 22px/1.5 var(--font-sans,sans-serif); color: #c9ffe8; margin: 12px 0; }
+.v14-dialog header h2 { font-size: 18px; margin: 0; }
+.v14-reader { height: min(830px,calc(var(--app-height,100dvh) - 38px)); display:flex; flex-direction:column; min-height:0; }
+.v14-scroll { padding: 18px 22px; overflow-y:auto; overscroll-behavior:contain; min-height:0; flex:1; -webkit-overflow-scrolling: touch; }
+#v14StoryPlace { color: #8cb9b6; font: 12px/1.6 monospace; }
+#v14StoryLabel { font: 600 14px/1.5 monospace; }
+#v14StorySpeaker { color: #c5b6ff; font: 700 16px/1.6 monospace; margin: 22px 0 12px; }
+#v14StoryText, #v14StoryReply { white-space: pre-wrap; overflow-wrap:anywhere; word-break:normal; line-break:strict; font: 400 17px/1.95 var(--font-sans,sans-serif); margin: 0 0 20px; }
+#v14StoryText.v14-document { border-left: 2px solid #54bda6; padding: 12px 16px; background:#0b252a; font-size: 15px; }
+#v14StoryChoices { display:grid; gap: 10px; }
+#v14StoryChoices button { text-align:left; font-size:15px; padding:14px; }
+#v14StoryChoices button[aria-pressed="true"] { border-color:#8ef2cb; background:#19463e; }
+#v14StoryReply { background:#1a2137; font-size:15px; padding:14px; border-left:2px solid #b39bff; margin-top:14px; }
+.v14-reader footer { padding:10px 18px max(12px,env(safe-area-inset-bottom)); border-top:1px solid #284c47; }
+.v14-reader-nav { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center; }
+#v14StoryNext { color:#03271f; background:#42dcb0; border-color:#80ffd1; }
+#v14StorySave { margin:8px 0 0; color:#8ebcb4; font:12px/1.5 sans-serif; text-align:center; }
+#v14StorySave.save-error { color:#f6c282; }
+#v14StoryArchive { max-height:calc(var(--app-height,100dvh) - 30px); display:flex; flex-direction:column; min-height:0; padding:0; }
+#v14StoryArchive header { flex-shrink:0; }
+.v14-archive-scroll { overflow-y:auto; min-height:0; padding:0 16px 16px; overscroll-behavior:contain; }
+#v14StoryArchiveList { display:grid; gap:8px; margin:16px 0; }
+.v14-archive-row { text-align:left; }
+#v14MemoScroll { max-height:calc(var(--app-height,100dvh) - 155px); overflow-y:auto; padding:16px; overscroll-behavior:contain; }
+#v14Operations,#v14MemoEmpty { font:14px/1.8 sans-serif; }
+#v14References { display:grid; gap:8px; margin:12px 0; }
+#v14References button { text-align:left; font-size:14px; overflow-wrap:anywhere; }
+#v14MemoList details { border-top:1px solid #315955; padding:8px 0; }
+#v14MemoList summary { min-height:44px; display:list-item; align-content:center; font:600 15px/1.6 sans-serif; color:#a3eccc; cursor:pointer; }
+#v14MemoList pre { white-space:pre-wrap; overflow-wrap:anywhere; font:14px/1.85 monospace; }
+.stage-buttons { min-width:0; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:thin; }
+.stage-button { flex:0 0 auto; min-width:44px; }
+@media (max-width:760px) {
+  .stage-nav { min-width:0; }
+  .stage-buttons { display:flex !important; gap:6px !important; }
+  .stage-button { min-width:44px; width:44px !important; }
+  .v14-entry h2 { font-size:16px; }
+  .v14-dialog { width:calc(100vw - 16px); border-radius:12px; max-height:calc(var(--app-height,100dvh) - 16px); }
+  .v14-reader { height:calc(var(--app-height,100dvh) - 24px); }
+  .v14-scroll { padding:16px; }
+  .v14-dialog header { padding:10px 14px; }
+  #v14StoryText { font-size:16px; line-height:1.95; }
+  .v14-tools { padding:6px 10px; }
+  .expansion-active .chat-panel { min-height:230px; }
+}
+@media (max-width:380px) {
+  .v14-channel,#v14MemoOpen { font-size:12px; padding:6px; }
+  .v14-reader header button { max-width:57%; font-size:13px; }
+}
+@media (max-height:560px) {
+  #v14NextLabel { display:none; }
+  .v14-tool-top { justify-content:flex-end; }
+  .v14-tool-controls { margin-top:0; }
+  .v14-reader header { padding:6px 12px; }
+  .v14-reader footer { padding:6px 12px; }
+  #v14StorySave { display:none; }
+  #v14StorySave.save-error { display:block; }
+}
+@media (prefers-reduced-motion:reduce) { .v14-dialog *, .v14-entry * { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+/* The original chat grid has three rows; the new routing strip is a fourth row. */
+.app-shell.expansion-active .chat-panel,
+.app-shell.expansion-active[data-mobile-view="console"] .chat-panel {
+  grid-template-rows: auto auto minmax(0,1fr) auto;
+}
+.progress-panel > .v14-entry { margin:12px 16px 20px; }
+/* New tasks carry denser public records; retain readable type without changing the base four. */
+.app-shell.expansion-active .message-content { font-size:14px; line-height:1.85; }
